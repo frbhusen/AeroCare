@@ -50,7 +50,11 @@ def tenant_unique(table):
 
 def tenant_fk(col, ref_table, ondelete="RESTRICT", name=None, **kw):
     """Composite FK (health_center_id, col) -> ref_table(health_center_id, id).
-    MATCH SIMPLE: a NULL `col` is allowed (optional reference)."""
+    MATCH SIMPLE: a NULL `col` is allowed (optional reference).
+    ondelete="SET NULL" is rewritten to PostgreSQL's column-list form `SET NULL (col)` so the
+    NOT NULL health_center_id is never nulled by the FK action."""
+    if ondelete and ondelete.upper() == "SET NULL":
+        ondelete = f"SET NULL ({col})"
     return ForeignKeyConstraint(
         ["health_center_id", col], [f"{ref_table}.health_center_id", f"{ref_table}.id"],
         ondelete=ondelete, name=name or f"fk_{col}_{ref_table}_tenant", **kw,

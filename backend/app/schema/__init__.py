@@ -28,7 +28,17 @@ CREATE INDEX IF NOT EXISTS ix_patients_search_name_trgm ON patients USING gin (s
 CREATE INDEX IF NOT EXISTS ix_patients_phone_trgm ON patients USING gin (phone_digits gin_trgm_ops);
 
 CREATE OR REPLACE FUNCTION hc_audit_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN RAISE EXCEPTION 'audit_logs is append-only'; END $$;
+BEGIN
+  -- Sole exception: the FK action ON DELETE SET NULL when a health center is permanently deleted
+  -- (only health_center_id changes, to NULL, and the center is gone). The runtime role has no
+  -- UPDATE privilege on audit_logs, so only the FK action can reach this branch.
+  IF TG_OP = 'UPDATE' AND OLD.health_center_id IS NOT NULL AND NEW.health_center_id IS NULL
+     AND (to_jsonb(NEW) - 'health_center_id') = (to_jsonb(OLD) - 'health_center_id')
+     AND NOT EXISTS (SELECT 1 FROM health_centers WHERE id = OLD.health_center_id) THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'audit_logs is append-only';
+END $$;
 DROP TRIGGER IF EXISTS trg_audit_immutable ON audit_logs;
 CREATE TRIGGER trg_audit_immutable BEFORE UPDATE OR DELETE ON audit_logs
   FOR EACH ROW EXECUTE FUNCTION hc_audit_immutable();
