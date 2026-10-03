@@ -33,3 +33,4 @@ Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated 
 - Inventory low-stock list only covers item/location pairs that ever had stock.
 - Production: install fonts-dejavu-core (Arabic PDFs).
 - Lab/radiology: bill requested tests (price stored per request item); stored finalize PDF is English only.
+- Billing: register a 'financial' patient summary provider gated by billing.view.

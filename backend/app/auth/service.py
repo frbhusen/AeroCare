@@ -108,7 +108,8 @@ def create_session(user):
         sess = UserSession(token_hash=_hash_token(token), csrf_token=secrets.token_urlsafe(32), user_id=user.id,
                            ip=client_ip(), user_agent=(request.user_agent.string or "")[:300])
         db.session.add(sess)
-        user.last_login_at = now
+        # Core UPDATE (not ORM attribute) so logging in doesn't bump users.version.
+        db.session.execute(update(User).where(User.id == user.id).values(last_login_at=now))
         db.session.commit()
     return token, sess
 
