@@ -26,3 +26,10 @@ Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated 
 
 ## Known Issues
 - none recorded
+
+## Integration backlog (from module reports)
+- Dentistry: block deleting invoiced treatments (billing hook); add appointments to dental timeline; hide files of staged-deleted X-rays during undo window; X-ray files can now set files.visit_id (composite SET NULL fixed in core).
+- Pharmacy sales → billing invoices link.
+- Inventory low-stock list only covers item/location pairs that ever had stock.
+- Production: install fonts-dejavu-core (Arabic PDFs).
+- Lab/radiology: bill requested tests (price stored per request item); stored finalize PDF is English only.
