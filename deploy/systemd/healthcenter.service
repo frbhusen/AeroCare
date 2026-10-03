@@ -1,0 +1,21 @@
+[Unit]
+Description=Health Center Platform (Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=healthcenter
+Group=healthcenter
+WorkingDirectory=/opt/healthcenter/app
+EnvironmentFile=/etc/healthcenter/healthcenter.env
+ExecStart=/opt/healthcenter/venv/bin/gunicorn -c deploy/gunicorn.conf.py backend.wsgi:app
+Restart=on-failure
+RestartSec=5
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/healthcenter /var/log/healthcenter
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
