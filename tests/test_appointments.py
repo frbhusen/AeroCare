@@ -355,3 +355,24 @@ def test_delete_and_undo(app, A, client_for):
     assert book(c, pid, "10:00", "10:30", clinic_id=A["clinics"]["dent1"], doctor_id=d1).status_code == 201
     r = c.post("/api/v1/undo", json={"undo_token": token})
     assert r.status_code == 409 and r.get_json()["error"]["code"] == "appointment_conflict"
+
+
+def test_day_reminders_list_and_mark_sent(A, world, client_for):
+    c = client_for(A["users"]["rec_dent"])
+    pid = c.post("/api/v1/patients", json={"full_name": "Reminder Patient", "phone": "0933 444 555",
+                                           "clinic_id": A["clinics"]["dent1"]}).get_json()["id"]
+    nophone = c.post("/api/v1/patients", json={"full_name": "No Phone", "clinic_id": A["clinics"]["dent2"]}).get_json()["id"]
+    a1 = book(c, pid, "09:00", "09:30", clinic_id=A["clinics"]["dent1"]).get_json()
+    book(c, nophone, "11:00", "11:30", clinic_id=A["clinics"]["dent2"])
+    r = c.get(f"{API}/reminders", query_string={"date": DAY, "lang": "ar"})
+    assert r.status_code == 200, r.get_json()
+    body = r.get_json()
+    assert [x["id"] for x in body["items"]][0] == a1["id"] and len(body["items"]) == 2
+    assert body["with_phone"] == 1 and body["items"][0]["whatsapp"]["url"].startswith("https://wa.me/963933444555")
+    assert body["items"][1]["whatsapp"] is None
+    assert c.post(f"{API}/{a1['id']}/reminded", json={}).status_code == 200
+    assert c.get(f"{API}/reminders", query_string={"date": DAY}).get_json()["sent"] == 1
+    # Scope: a clinic-1 receptionist only sees clinic 1; another center sees nothing.
+    only1 = client_for(A["users"]["rec_dent1"]).get(f"{API}/reminders", query_string={"date": DAY}).get_json()
+    assert [x["id"] for x in only1["items"]] == [a1["id"]]
+    assert client_for(world["B"]["users"]["manager"]).get(f"{API}/reminders", query_string={"date": DAY}).get_json()["items"] == []

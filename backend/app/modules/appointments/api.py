@@ -186,6 +186,23 @@ def delete(appointment_id):
     return jsonify(service.delete(p, a)), 202
 
 
+@bp.get("/reminders")
+@login_required(perm="appointments.view")
+def day_reminders():
+    from datetime import timedelta
+    f = query_args({"date": Date(), "lang": Enum(["ar", "en"]), "clinic_id": Id(), "doctor_id": Id()})
+    day = f.get("date") or (local_today() + timedelta(days=1))
+    return jsonify(reminders.day_reminders(current_principal(), day, f.get("lang") or "en", f.get("clinic_id"),
+                                           f.get("doctor_id")))
+
+
+@bp.post("/<int:appointment_id>/reminded")
+@login_required(perm="appointments.view")
+def mark_reminded(appointment_id):
+    p = current_principal()
+    return jsonify(reminders.mark_reminded(p, service.get_appointment(p, appointment_id)))
+
+
 @bp.get("/<int:appointment_id>/whatsapp")
 @login_required(perm="appointments.view")
 def whatsapp(appointment_id):

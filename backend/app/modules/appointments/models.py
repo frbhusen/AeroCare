@@ -88,6 +88,8 @@ class Appointment(db.Model, TenantMixin, TimestampMixin, VersionMixin, UndoDelet
     notes = Column(Text)
     status = Column(String(20), nullable=False, default="scheduled")
     status_changed_at = Column(DateTime(timezone=True))
+    reminder_sent_at = Column(DateTime(timezone=True))  # WhatsApp reminder opened by staff (manual send)
+    reminder_sent_by = Column(String(200))
     is_walk_in = Column(Boolean, nullable=False, default=False)
     series_id = Column(Integer, index=True)
     series_index = Column(Integer)  # 0-based position in the generated series
@@ -109,3 +111,8 @@ END $$;
 
 register_sql("appointments_exclusion", _exclusion("ex_appointments_doctor", "doctor_id")
              + _exclusion("ex_appointments_clinic", "clinic_id"))
+
+# Additive column for databases created before reminders tracking (create_all doesn't alter tables).
+register_sql("appointments_reminder_columns",
+             "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_at timestamptz;"
+             "ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_by varchar(200);")

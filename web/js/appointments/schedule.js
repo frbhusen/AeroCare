@@ -7,6 +7,7 @@ import { loadMeta, loadDoctors, areaClinics, pill, typeLabel, addDays, weekStart
 import { openAppointmentForm, openWalkIn } from "./form.js";
 import { openAppointment } from "./detail.js";
 import { scheduleNode } from "./print.js";
+import { openReminders } from "./reminders.js";
 
 const ACTIVE = "scheduled,arrived,in_progress,completed";
 const isPhone = () => window.matchMedia("(max-width: 640px)").matches;
@@ -61,6 +62,8 @@ export async function renderSchedule(ctx) {
     can.create ? h("button", { class: "btn", type: "button", onClick: () => openWalkIn({ ctx, meta, onSaved: (a) => { load(); if (a) openAppointment({ ctx, meta, id: a.id, onChanged: load }); } }) },
       icon("user"), t("appointments.walk_in")) : null,
     can.create ? h("button", { class: "btn", type: "button", onClick: () => openNew({}, true) }, icon("refresh"), t("appointments.recurring")) : null,
+    h("button", { class: "btn", type: "button", onClick: () => openReminders({ clinicId: state.clinic_id || undefined }) },
+      icon("bell"), t("appointments.reminders.button")),
     h("button", { class: "btn", type: "button", onClick: printSchedule }, icon("printer"), t("appointments.print")));
 
   const toolbar = h("div", { class: "appt-toolbar no-print" },

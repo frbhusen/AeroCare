@@ -51,3 +51,39 @@ def whatsapp_link(p, a, lang="en"):
         clinic=clinic, location=f" ({location})" if location else "")
     return {"url": f"https://wa.me/{phone}?text={quote(message, safe='')}", "message": message, "phone": phone,
             "lang": lang}
+
+
+def day_reminders(p, day, lang="en", clinic_id=None, doctor_id=None):
+    """Scheduled appointments of one local day (default: tomorrow) in the principal's scope, each with
+    its prepared WhatsApp link — staff click through the list and send manually (spec §77)."""
+    from backend.app.core.timeutil import local_day_bounds
+    from . import service as svc
+    from .models import Appointment
+    start, end = local_day_bounds(day)
+    stmt = svc.scoped_query(p).where(Appointment.starts_at >= start, Appointment.starts_at < end,
+                                     Appointment.status == "scheduled")
+    if clinic_id:
+        p.require(clinic_id=clinic_id)
+        stmt = stmt.where(Appointment.clinic_id == clinic_id)
+    if doctor_id:
+        stmt = stmt.where(Appointment.doctor_id == doctor_id)
+    rows = db.session.execute(stmt.order_by(Appointment.starts_at).limit(500)).scalars().all()
+    out = []
+    for a, item in zip(rows, svc.serialize_many(rows)):
+        try:
+            link = whatsapp_link(p, a, lang)
+        except ValidationError:
+            link = None
+        out.append({**item, "whatsapp": link, "reminder_sent_at": a.reminder_sent_at.isoformat() if a.reminder_sent_at else None,
+                    "reminder_sent_by": a.reminder_sent_by})
+    return {"date": day.isoformat(), "items": out, "with_phone": sum(1 for x in out if x["whatsapp"]),
+            "sent": sum(1 for x in out if x["reminder_sent_at"])}
+
+
+def mark_reminded(p, a):
+    from backend.app.core.timeutil import utcnow
+    p.require("appointments.view", clinic_id=a.clinic_id)
+    a.reminder_sent_at = utcnow()
+    a.reminder_sent_by = p.user.name
+    db.session.commit()
+    return {"id": a.id, "reminder_sent_at": a.reminder_sent_at.isoformat(), "reminder_sent_by": a.reminder_sent_by}
