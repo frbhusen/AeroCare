@@ -148,6 +148,14 @@ def get_series(series_id):
     return jsonify({"series": series.serialize_series(s), "items": service.serialize_many(rows)})
 
 
+@bp.post("/series/<int:series_id>/cancel")
+@login_required
+def cancel_series(series_id):
+    data = validate(request_json(), {"from_appointment_id": Id()})
+    rows = series.cancel_series(current_principal(), series_id, data.get("from_appointment_id"))
+    return jsonify({"cancelled": len(rows), "items": service.serialize_many(rows)})
+
+
 @bp.put("/<int:appointment_id>")
 @login_required(perm="appointments.edit")
 def update(appointment_id):

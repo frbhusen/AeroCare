@@ -85,7 +85,29 @@ export function openAppointment({ ctx, meta, id, onChanged }) {
         icon("edit"), t("core.edit")) : null,
         a.patient.phone ? h("button", { class: "btn", type: "button", onClick: () => whatsapp(a) }, icon("bell"), t("appointments.whatsapp")) : null,
         h("button", { class: "btn", type: "button", onClick: () => printElement(slipNode(a)) }, icon("printer"), t("appointments.print_slip")),
+        can.edit && a.series_id && a.status === "scheduled" ? h("button", { class: "btn btn-danger", type: "button", onClick: cancelSeries },
+          icon("x"), t("appointments.series.cancel")) : null,
         can.delete ? h("button", { class: "btn btn-danger", type: "button", onClick: remove }, icon("trash"), t("appointments.delete")) : null));
+  }
+
+  /** Cancel this and all later scheduled occurrences, or the whole series. Past/arrived visits are kept. */
+  function cancelSeries() {
+    const run = async (fromId, m) => {
+      try {
+        const res = await api.post(`/appointments/series/${appt.series_id}/cancel`, fromId ? { from_appointment_id: fromId } : {});
+        m.close();
+        toastSuccess(t("appointments.series.cancelled", { n: res.cancelled }));
+        load();
+        onChanged?.();
+      } catch (e) { toastApiError(e); }
+    };
+    const m = openModal({ title: t("appointments.series.cancel"), size: "sm",
+      body: h("p", t("appointments.series.cancel_message")),
+      actions: [
+        { label: t("core.cancel") },
+        { label: t("appointments.series.cancel_future"), variant: "danger", onClick: () => { run(appt.id, m); return false; } },
+        { label: t("appointments.series.cancel_all"), variant: "danger", onClick: () => { run(null, m); return false; } },
+      ] });
   }
 
   async function remove() {

@@ -125,3 +125,31 @@ def test_this_and_future_shift_onto_own_slots(app, world, client_for):
     assert r.status_code == 200, r.get_json()
     s = c.get(f"{API}/series/{r.get_json()['series_id']}").get_json()
     assert [i["local_date"] for i in s["items"]] == ["2026-11-03", "2026-11-04", "2026-11-05"]
+
+
+def test_cancel_whole_series_and_from_occurrence(world, client_for):
+    A = world["A"]
+    c = client_for(A["users"]["rec_dent"])
+    from tests.test_appointments import make_patient  # noqa: E402
+    import flask
+    pid = make_patient(flask.current_app._get_current_object() if flask.has_app_context() else None, A) \
+        if False else None
+    # create a patient through the API instead (no direct DB access needed)
+    pid = c.post("/api/v1/patients", json={"full_name": "Series Patient", "clinic_id": A["clinics"]["dent1"]}).get_json()["id"]
+    r = recurring(c, pid, A["clinics"]["dent1"], rule={"freq": "weekly", "count": 4}, start="2027-01-04T10:00:00")
+    assert r.status_code == 201, r.get_json()
+    body = r.get_json()
+    sid, items = body["series"]["id"], body["items"]
+    # First occurrence already happened (arrived) -> must be kept.
+    first = items[0]
+    assert c.post(f"{API}/{first['id']}/status", json={"status": "arrived", "version": first["version"]}).status_code == 200
+    # Cancel from the 3rd occurrence on.
+    r = c.post(f"{API}/series/{sid}/cancel", json={"from_appointment_id": items[2]["id"]})
+    assert r.status_code == 200 and r.get_json()["cancelled"] == 2
+    statuses = [x["status"] for x in c.get(f"{API}/series/{sid}").get_json()["items"]]
+    assert statuses == ["arrived", "scheduled", "cancelled", "cancelled"]
+    # Cancel the rest of the series.
+    assert c.post(f"{API}/series/{sid}/cancel", json={}).get_json()["cancelled"] == 1
+    # Other center cannot touch it; doctor of another clinic cannot either.
+    assert client_for(world["B"]["users"]["manager"]).post(f"{API}/series/{sid}/cancel", json={}).status_code == 404
+    assert client_for(A["users"]["dent_doc2"]).post(f"{API}/series/{sid}/cancel", json={}).status_code == 404

@@ -146,3 +146,29 @@ def update_this_and_future(p, a, data):
         series.start_time, series.duration_minutes = new_time, duration
     db.session.commit()
     return a
+
+
+def cancel_series(p, series_id, from_appointment_id=None):
+    """Cancel every *scheduled* occurrence of a series (or, with from_appointment_id, that occurrence
+    and all later ones). Arrived/in-progress/completed/no-show occurrences are history and kept.
+    Occurrences outside the principal's scope are untouched. Returns the cancelled rows."""
+    from backend.app.core.timeutil import utcnow
+    s = get_series(p, series_id)
+    p.require("appointments.edit", clinic_id=s.clinic_id)
+    stmt = svc.scoped_query(p).where(Appointment.series_id == s.id, Appointment.status == "scheduled")
+    if from_appointment_id:
+        start = db.session.execute(svc.scoped_query(p).where(
+            Appointment.id == from_appointment_id, Appointment.series_id == s.id)).scalar_one_or_none()
+        if start is None:
+            raise NotFound("Appointment not found in this series")
+        stmt = stmt.where(Appointment.starts_at >= start.starts_at)
+    rows = db.session.execute(stmt.order_by(Appointment.starts_at).with_for_update()).scalars().all()
+    now = utcnow()
+    for r in rows:
+        r.status = "cancelled"
+        r.status_changed_at = now
+    db.session.flush()
+    if rows:
+        svc.notify(p, rows[0], "appointment_cancelled", f"{len(rows)} appointments of a series cancelled")
+    db.session.commit()
+    return rows
