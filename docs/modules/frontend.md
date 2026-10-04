@@ -29,9 +29,9 @@ Shell, design system and shared JS infrastructure that every module UI plugs int
 `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/change-password`, `POST /auth/support/enter|exit`, `GET /notifications`, `POST /notifications/read`, `POST /undo`, `GET /platform/branding` (optional), `GET /admin/centers` (optional, support picker), `GET /patients?q=` (patient search; degrades if absent), `PATCH /files/<id>` + `GET /files/<id>/content` (viewer).
 
 ## Status
-Implemented and verified in the browser pane against `healthcenter_dev` (desktop 1280×800 and mobile 375×812, EN and AR): login, center overview cards, department environment + switcher (receptionist with 2 departments), doctor (no switcher, no center access), superadmin portal + support enter/exit with banner, session-replaced logout message, offline queue (queued → replayed → applied; 404 → sync issue → discard), data table, form field errors from `error.details`, patient search, undo toast, image viewer annotations with rotation. All JS passes `node --check`; named imports cross-checked.
+Implemented and verified in the browser pane against the dev database (now `health_center`, see .env.example) (desktop 1280×800 and mobile 375×812, EN and AR): login, center overview cards, department environment + switcher (receptionist with 2 departments), doctor (no switcher, no center access), superadmin portal + support enter/exit with banner, session-replaced logout message, offline queue (queued → replayed → applied; 404 → sync issue → discard), data table, form field errors from `error.details`, patient search, undo toast, image viewer annotations with rotation. All JS passes `node --check`; named imports cross-checked.
 
-### Demo logins (healthcenter_dev, "Frontend Demo Center")
+### Demo logins (dev database, "Frontend Demo Center")
 Password for all: the value used for `HC_DEMO_PASSWORD` / `HC_SUPERADMIN_PASSWORD` when seeding (kept outside the repo; not written here).
 - `devadmin_3@aerodent.com` — superadmin (created with `flask admin create-superadmin --username devadmin`)
 - `fe-manager@demo.local` — center manager (Dentistry, Dermatology, Laboratory, General Medicine; 1 clinic each)

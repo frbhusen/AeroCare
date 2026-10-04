@@ -178,11 +178,6 @@
   pointer-events: none;
 }
 
-[data-theme="dark"] .derm-sil {
-  fill: #1e293b;
-  stroke: #334155;
-}
-
 /* Individual body regions */
 .derm-region {
   fill: rgba(241, 245, 249, 0.65);
@@ -194,11 +189,6 @@
   outline: none;
   touch-action: manipulation;
   pointer-events: auto;
-}
-
-[data-theme="dark"] .derm-region {
-  fill: rgba(30, 41, 59, 0.65);
-  stroke: #64748b;
 }
 
 .derm-region:hover,
@@ -278,12 +268,6 @@
   font-weight: 600;
   transition: all 0.15s ease;
   user-select: none;
-}
-
-[data-theme="dark"] .derm-tag {
-  background: rgba(13, 148, 136, 0.22);
-  color: #5eead4;
-  border-color: rgba(94, 234, 212, 0.35);
 }
 
 .derm-tag-remove {

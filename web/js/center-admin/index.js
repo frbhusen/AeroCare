@@ -78,7 +78,7 @@ function renderOrganization(ctx) {
       label: t("center-admin.org.tab.clinics"),
       render: (el) => clinicsTab(el),
     },
-    can("roles.edit") ? {
+    can("permissions.manage") ? {
       key: "permissions",
       label: t("center-admin.org.tab.permissions"),
       render: (el) => rolePermissionsTab(el),

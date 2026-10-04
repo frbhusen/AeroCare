@@ -9,7 +9,7 @@ This guide covers running the Health Center Management Platform locally for deve
 In a local development environment:
 - **Backend**: Flask application running on Python 3.12+ (serves both API `/api/v1/` and static frontend files `/` when `SERVE_FRONTEND=true`).
 - **Frontend**: Vanilla ES modules (HTML5 + CSS + JavaScript, no bundler or build tools required).
-- **Database**: PostgreSQL 17+ (running locally on port `55432` with `pg_trgm` and `btree_gist` extensions).
+- **Database**: PostgreSQL 15+ (running locally on port `55432` with `pg_trgm` and `btree_gist` extensions).
 - **Row-Level Security (RLS)**: Enforced via PostgreSQL runtime role `hc_app` (`NOBYPASSRLS`). The application never connects as superuser or table owner during runtime.
 - **File Storage**: Local directory (`./storage`), completely isolated from the web root.
 
@@ -19,7 +19,7 @@ In a local development environment:
 
 1. **Python 3.12+**
    - Verify: `python --version` (or `python3 --version`)
-2. **PostgreSQL 17+** (with command line tools `pg_ctl`, `initdb`, `psql`)
+2. **PostgreSQL 15+** (with command line tools `pg_ctl`, `initdb`, `psql`)
    - Verify: `psql --version`
 3. **Node.js** (Optional, used for `node --check` syntax validation)
    - Verify: `node --version`
@@ -53,7 +53,7 @@ pip install -r requirements.lock.txt
 
 ### Step 3.2: Local PostgreSQL Cluster & Roles
 
-The project uses a dedicated local cluster (defaulting to directory `.devdb/data` on port `55432`) or an existing local PostgreSQL 17+ instance.
+The project uses a dedicated local cluster (defaulting to directory `.devdb/data` on port `55432`) or an existing local PostgreSQL 15+ instance.
 
 #### Option A: Dedicated Local Cluster in `.devdb` (Recommended for Development)
 

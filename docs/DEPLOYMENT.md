@@ -7,7 +7,7 @@ Files: `deploy/nginx/healthcenter.conf`, `deploy/gunicorn.conf.py`, `deploy/syst
 ```
 apt install nginx postgresql python3-venv python3-dev build-essential fonts-dejavu-core certbot python3-certbot-nginx
 ```
-PostgreSQL 17+ required (RLS FORCE, `pg_trgm`, `btree_gist`).
+PostgreSQL 15+ required (RLS FORCE, `pg_trgm`, `btree_gist`).
 
 ## 2. Database roles
 ```sql

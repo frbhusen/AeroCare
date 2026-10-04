@@ -13,7 +13,7 @@ This project evolves AeroDent-Online into a full multi-tenant Health Center Mana
   ```
 - **Strict Isolation**: App filters + Composite FKs `(health_center_id, ...)` + PostgreSQL RLS (FORCE) using runtime role `hc_app`. Context set via transaction-local `app.mode` / `app.center_id`.
 - **Global Patient Identity**: One patient record per health center, linked to clinics via `patient_clinic_links`. Medical records are isolated by department/clinic scopes.
-- **Server Sessions**: Stored in `sessions` table with hashed token; single active session enforced per user (revoking existing sessions on login).
+- **Server Sessions**: Stored in the `user_sessions` table with a SHA-256 hashed token; single active session enforced per user (revoking existing sessions on login).
 
 ## 2. Technology Stack & Directory Structure
 - **Backend**: Python 3.12+, Flask application factory, SQLAlchemy 2.0, PostgreSQL 18.

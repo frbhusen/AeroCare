@@ -6,7 +6,7 @@ Read only what your task needs: this file, then ARCHITECTURE.md / PERMISSIONS.md
 - Python venv: `.venv/Scripts/python`, `.venv/Scripts/flask`. Node available for `node --check`.
 - Dev Postgres: `127.0.0.1:55432` (project-local cluster in `.devdb/`, roles `hc_owner` superuser, `hc_schema` owner, `hc_app` runtime). Start if down:
   `"/c/Program Files/PostgreSQL/18/bin/pg_ctl" -D .devdb/data -o "-p 55432 -c listen_addresses=127.0.0.1" -l .devdb/pg.log start` (run in background; it holds stdout).
-- Dev DB: `healthcenter_dev`. Rebuild schema: `.venv/Scripts/flask --app backend.wsgi db init-schema`.
+- Dev DB: `health_center` (set in `.env`; the older `healthcenter_dev` is no longer used). Rebuild schema: `.venv/Scripts/flask --app backend.wsgi db init-schema`.
 - **Tests**: `.venv/Scripts/python -m pytest tests/<file>.py`. Each parallel agent MUST use its own test DB to avoid clobbering others (the suite drops/recreates the schema):
   `TEST_DATABASE_URL=postgresql+psycopg://hc_app@127.0.0.1:55432/healthcenter_test_N TEST_SCHEMA_DATABASE_URL=postgresql+psycopg://hc_schema@127.0.0.1:55432/healthcenter_test_N .venv/Scripts/python -m pytest ...`
   (N = your assigned number; DBs `healthcenter_test_1..12` exist).

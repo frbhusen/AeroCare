@@ -34,7 +34,7 @@ export function register(registry) {
     env: ["pharmacy"],
     path: "sales",
     title: "pharmacy.tab.sales",
-    perm: "pharmacy.sell",
+    perm: "pharmacy.dispense",
     render: renderSales,
   });
 
@@ -45,7 +45,7 @@ export function register(registry) {
     path: "sales",
     label: "pharmacy.tab.sales",
     icon: "tag",
-    perm: "pharmacy.sell",
+    perm: "pharmacy.dispense",
     order: 30,
   });
 }
