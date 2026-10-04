@@ -26,9 +26,7 @@ Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated 
 - Production deployment on Linux (Nginx/Gunicorn) — deployment configs present in `deploy/`, verification on Linux host pending.
 
 ## Known Issues / Notes
-- Department managers have no department-scoped Settings page yet (staff page exists).
-- First load on the Flask dev server takes ~5 s (many ES modules served one by one); Nginx in production serves them in parallel with caching.
 - Arabic PDF layout not yet checked visually.
-- Patient search results show the raw code (e.g. "2") instead of PAT-000002 in some pickers.
+
 - Arabic PDF rendering in production requires `fonts-dejavu-core` or suitable fonts installed on Linux.
 - Service worker registration in embedded verification webview requires standard Chrome/Edge browser context.

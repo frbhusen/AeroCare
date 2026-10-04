@@ -177,6 +177,7 @@ flask --app backend.wsgi run --host 127.0.0.1 --port 5000 --debug
 ```
 
 - **Application URL**: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+  - Use `127.0.0.1`, not `localhost`: on Windows `localhost` tries IPv6 first and every one of the ~130 module files waits ~1 s (first load ≈ 6 s instead of < 0.5 s).
 - **API Health Endpoint**: [http://127.0.0.1:5000/api/v1/health](http://127.0.0.1:5000/api/v1/health)
 
 Sign in with your superadmin account (`devadmin@aerodent.com` or custom username/email) to access the Superadmin Portal at `#/admin`.
