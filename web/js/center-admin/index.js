@@ -5,10 +5,12 @@ import { renderStaff } from "./staff.js";
 import { departmentsTab, clinicsTab } from "./org.js";
 import { rolePermissionsTab } from "./perms.js";
 import { centerDict, centerTab, auditTab, backupTab } from "./center.js";
+import { favoritesDict, favoritesTab } from "./favorites.js";
 
 export function register(registry) {
   registry.i18n(dict);
   registry.i18n(centerDict);
+  registry.i18n(favoritesDict);
 
   // Staff route & menu
   registry.route({
@@ -96,6 +98,7 @@ function renderOrganization(ctx) {
       label: t("center-admin.org.tab.permissions"),
       render: (el) => rolePermissionsTab(el),
     } : null,
+    centerLevel && can("medical_records.view") ? { key: "favorites", label: t("favorites.tab"), render: (el) => favoritesTab(el) } : null,
     can("audit.view") ? { key: "audit", label: t("center-admin.audit.tab"), render: (el) => auditTab(el) } : null,
     centerLevel && can("backup.create") ? { key: "backup", label: t("center-admin.backup.tab"), render: (el) => backupTab(el) } : null,
   ].filter(Boolean);
@@ -116,6 +119,7 @@ function renderDepartmentSettings(ctx) {
   const tb = tabs([
     { key: "department", label: t("center-admin.org.tab.departments"), render: (el) => departmentsTab(el, { centerLevel: false }) },
     { key: "clinics", label: t("center-admin.org.tab.clinics"), render: (el) => clinicsTab(el, { deptId: ctx.dept.id }) },
+    { key: "favorites", label: t("favorites.tab"), render: (el) => favoritesTab(el, { departmentId: ctx.dept.id }) },
     can("audit.view") ? { key: "audit", label: t("center-admin.audit.tab"), render: (el) => auditTab(el) } : null,
   ].filter(Boolean));
   return h("div", { class: "page" },

@@ -125,8 +125,37 @@ export async function openPrescriptionEditor({ ctx, patient, visit = null, rx = 
   (rx?.items?.length ? rx.items : [{}]).forEach((i) => addRow(i));
   rows.querySelector("input")?.blur?.();
 
+  // Favorite prescription sets (center-wide + this department): load into the rows, or save the rows as a set.
+  const deptId = ctx?.dept?.id || visit?.department_id || null;
+  const setSel = h("select", { class: "select", "aria-label": t("patients.rx.sets") }, h("option", { value: "" }, t("patients.rx.load_set")));
+  let sets = [];
+  api.get("/favorites", { query: { kind: "rx_set", department_id: deptId || undefined } }).then((res) => {
+    sets = res.items || [];
+    setSel.append(...sets.map((f) => h("option", { value: f.id }, f.title)));
+    setSel.hidden = !sets.length;
+  }).catch(() => { setSel.hidden = true; });
+  setSel.addEventListener("change", () => {
+    const f = sets.find((x) => String(x.id) === setSel.value);
+    if (!f) return;
+    const empty = [...rows.children].filter((r) => !r.querySelector('[name="medication_name"]').value.trim());
+    empty.forEach((r) => r.remove());
+    (f.payload.items || []).forEach((i) => addRow(i));
+    setSel.value = "";
+  });
+  const saveSetBtn = deptId && can("medical_records.create") ? h("button", { class: "btn btn-sm btn-ghost", type: "button", onClick: async () => {
+    const items = collect().items.filter((i) => i.medication_name);
+    if (!items.length) return;
+    const title = window.prompt(t("patients.rx.set_name"), items.map((i) => i.medication_name).join(" + ").slice(0, 80));
+    if (!title) return;
+    try {
+      await api.post("/favorites", { kind: "rx_set", department_id: deptId, title, payload: { items } });
+      toast(t("patients.rx.set_saved"), { type: "success" });
+    } catch (e) { toastApiError(e); }
+  } }, icon("plus"), t("patients.rx.save_set")) : null;
+
   const form = h("form", { class: "form", novalidate: true },
     errorBox,
+    h("div", { class: "row gap-sm wrap" }, setSel, saveSetBtn),
     clinicSel ? h("div", { class: "field", dataset: { field: "clinic_id" } }, h("label", t("patients.field.clinic")), clinicSel) : null,
     h("div", { class: "field", dataset: { field: "items" } }, h("label", t("patients.rx.items")), rows,
       h("button", { class: "btn btn-sm", type: "button", onClick: () => addRow() }, icon("plus"), t("patients.rx.add_item"))),

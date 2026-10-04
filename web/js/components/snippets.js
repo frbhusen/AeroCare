@@ -1,169 +1,74 @@
-// Clinical note snippets & templates picker
-import { h, t } from "../core/index.js";
+// "Templates" button for clinical textareas: inserts saved snippets (and favorite diagnoses for diagnosis
+// fields) from /api/v1/favorites, and saves the current text as a new template. Server-backed (no hard-coded
+// clinical text); center-wide templates + those of the active department.
+import { h } from "../core/dom.js";
+import { t } from "../core/i18n.js";
+import { api } from "../core/api.js";
+import { can } from "../core/perm.js";
+import { getActiveDepartment } from "../core/state.js";
 import { icon } from "./icons.js";
 import { popover } from "./modal.js";
 
-const DEFAULT_SNIPPETS = {
-  // Clinical Examination & Findings
-  examination_findings: [
-    {
-      en: "Physical examination within normal limits. No signs of acute distress or infection.",
-      ar: "الفحص السريري سليم وضمن الحدود الطبيعية. لا توجد علامات ضائقة حادة أو التهاب."
-    },
-    {
-      en: "Localized erythematous maculopapular rash, non-tender, no scaling or weeping.",
-      ar: "طفح بقعي حطاطي حمامي موضعي، غير مؤلم، دون تقشر أو نضح."
-    },
-    {
-      en: "Clear cornea and anterior chamber, pupillary reflexes brisk and symmetrical bilaterally.",
-      ar: "القرنية والغرفة الأمامية شفافتان، المنعكسات الحليمية نشطة ومتناظرة في كلا العينين."
-    },
-    {
-      en: "Oral mucosa pink and moist, mild marginal gingival inflammation around lower molars.",
-      ar: "الغشاء المخاطي الفموي وردي ورطب، التهاب لثة حفافي طفيف حول الأرحاء السفلية."
-    }
-  ],
+// Fields where templates make no sense (administrative text).
+const SKIP = new Set(["address", "document_footer", "login_message", "description", "reason", "void_reason", "notes_admin"]);
+const DIAGNOSIS_FIELDS = new Set(["diagnosis", "condition", "impression", "assessment"]);
 
-  // Symptoms & Chief Complaints
-  symptoms: [
-    {
-      en: "Mild pruritus and localized discomfort for 3 days, exacerbated by heat.",
-      ar: "حكة خفيفة وانزعاج موضعي منذ 3 أيام، يتفاقم مع التعرض للحرارة."
-    },
-    {
-      en: "Gradual painless blurring of distant vision in both eyes over past 2 months.",
-      ar: "تراجع تدريجي غير مؤلم في الرؤية البعيدة بكلتا العينين خلال الشهرين الماضيين."
-    },
-    {
-      en: "Mild localized pain provoked by hot and cold stimuli, resolving shortly after.",
-      ar: "ألم موضعي خفيف يثار بالحرارة والبرودة ويزول بعد فترة قصيرة."
-    }
-  ],
+function append(textarea, text) {
+  const cur = textarea.value.trim();
+  textarea.value = cur ? `${cur}\n${text}` : text;
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  textarea.focus();
+}
 
-  // Diagnosis
-  diagnosis: [
-    {
-      en: "Contact dermatitis (mild, irritant type).",
-      ar: "التهاب جلد تماسي (خفيف، نمط تخريشي)."
-    },
-    {
-      en: "Refractive error (Simple Myopia / Astigmatism).",
-      ar: "عيب انكساري (حسر بصر بسيط / حرج بصر)."
-    },
-    {
-      en: "Class I Dental Caries with reversible pulpitis.",
-      ar: "نخر سني صنف أول مع التهاب لب عكوس."
-    },
-    {
-      en: "Post-inflammatory hyperpigmentation.",
-      ar: "فرط تصبغ تالٍ للالتهاب."
-    }
-  ],
+/** Returns the trigger button for a textarea, or null when templates don't apply. */
+export function snippetButton(textarea, fieldName, enabled) {
+  if (enabled === false || !fieldName || SKIP.has(fieldName) || !can("medical_records.view")) return null;
+  const label = t("core.snippets.btn", { default: "Templates" });
+  const btn = h("button", { class: "snippet-trigger-btn", type: "button", title: label, "aria-label": label },
+    icon("file"), h("span", t("core.snippets.title", { default: "Templates" })));
 
-  // Treatment Plans
-  treatment: [
-    {
-      en: "Topical emollient applied twice daily. Avoid scented soaps and harsh detergents.",
-      ar: "تطبيق مرطب موضعي مرتين يومياً. تجنب الصابون المعطر والمنظفات الكيميائية."
-    },
-    {
-      en: "Preservative-free artificial tears 1 drop 4 times daily as needed for dry eye relief.",
-      ar: "قطرة دموع اصطناعية خالية من المواد الحافظة قطرة واحدة 4 مرات يومياً حسب الحاجة."
-    },
-    {
-      en: "Tooth restoration completed with light-cured composite resin. Oral hygiene reinforced.",
-      ar: "تمت حشوة السن براتنج الكمبوزيت الضوئي. تم التأكيد على تعليمات العناية الفموية."
-    },
-    {
-      en: "Follow-up in 2 weeks or sooner if symptoms worsen.",
-      ar: "مراجعة العيادة بعد أسبوعين أو قبل ذلك في حال تفاقم الأعراض."
-    }
-  ],
-
-  // Notes & Laser Parameters
-  notes: [
-    {
-      en: "Patient tolerated the procedure well. No adverse reactions observed during or after session.",
-      ar: "تحمل المريض الإجراء بشكل جيد. لم تُلاحظ أي تأثيرات جانبية أثناء أو بعد الجلسة."
-    },
-    {
-      en: "Laser session completed with standard cooling and fluence parameters. Mild expected transient erythema.",
-      ar: "تمت جلسة الليزر بمعايير التبريد والحرارة المعتمدة. احمرار خفيف متوقع ومؤقت."
-    },
-    {
-      en: "Strict sun protection advised with broad-spectrum SPF 50+ sunscreen applied every 2 hours outdoors.",
-      ar: "تم التأكيد على الوقاية الصارمة من الشمس واستخدام واقٍ شمسي SPF 50+ وتجديده كل ساعتين خارجاً."
-    },
-    {
-      en: "Next session recommended in 4-6 weeks.",
-      ar: "يُنصح بالجلسة القادمة بعد 4 إلى 6 أسابيع."
-    }
-  ]
-};
-
-// Aliases for matching fields
-DEFAULT_SNIPPETS.chief_complaint = DEFAULT_SNIPPETS.symptoms;
-DEFAULT_SNIPPETS.history = DEFAULT_SNIPPETS.symptoms;
-DEFAULT_SNIPPETS.condition = DEFAULT_SNIPPETS.diagnosis;
-
-/**
- * Returns snippet button element for a textarea
- */
-export function snippetButton(textarea, fieldName, customSnippets) {
-  const snippets = customSnippets || DEFAULT_SNIPPETS[fieldName] || DEFAULT_SNIPPETS.notes;
-  if (!snippets || !snippets.length) return null;
-
-  const btn = h("button", {
-    class: "snippet-trigger-btn",
-    type: "button",
-    title: t("core.snippets.btn", { default: "Quick Note Templates" }),
-    "aria-label": t("core.snippets.btn", { default: "Quick Note Templates" })
-  },
-  icon("fileText"),
-  h("span", t("core.snippets.title", { default: "Templates" }))
-  );
-
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
+  btn.addEventListener("click", async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    const dept = getActiveDepartment();
+    const list = h("div", { class: "snippet-popover-list" }, h("div", { class: "text-sm muted" }, "…"));
+    const saveBtn = can("medical_records.create") && dept ? h("button", { class: "btn btn-sm", type: "button", onClick: save },
+      icon("plus"), t("core.snippets.save", { default: "Save current text as template" })) : null;
+    const pop = popover(btn, h("div", { class: "snippet-popover-body" },
+      h("div", { class: "snippet-popover-header" }, h("strong", t("core.snippets.header", { default: "Templates" }))),
+      list, saveBtn), { className: "snippet-popover" });
 
-    const isAr = document.documentElement.lang === "ar" || document.documentElement.dir === "rtl";
-    let pop;
+    async function load() {
+      try {
+        const q = { field: fieldName, department_id: dept?.id };
+        const [snips, diags] = await Promise.all([
+          api.get("/favorites", { query: { ...q, kind: "snippet" } }),
+          DIAGNOSIS_FIELDS.has(fieldName) ? api.get("/favorites", { query: { department_id: dept?.id, kind: "diagnosis" } }) : { items: [] },
+        ]);
+        const items = [...diags.items, ...snips.items];
+        list.replaceChildren(...(items.length ? items.map((f) => h("button", { class: "snippet-item", type: "button",
+          onClick: () => { append(textarea, f.body || f.title); pop?.close?.(); } },
+        h("strong", f.title), f.body && f.body !== f.title ? h("div", { class: "text-sm muted" }, f.body) : null))
+          : [h("div", { class: "text-sm muted" }, t("core.snippets.none", { default: "No templates yet." }))]));
+      } catch {
+        list.replaceChildren(h("div", { class: "text-sm muted" }, t("core.snippets.none", { default: "No templates yet." })));
+      }
+    }
 
-    const list = h("div", { class: "snippet-popover-list" });
-
-    snippets.forEach((item) => {
-      const text = isAr ? (item.ar || item.en) : (item.en || item.ar);
-      const row = h("button", {
-        class: "snippet-item",
-        type: "button",
-        onClick: () => {
-          pop.close();
-          const current = textarea.value.trim();
-          if (!current) {
-            textarea.value = text;
-          } else {
-            textarea.value = current + "\n" + text;
-          }
-          textarea.dispatchEvent(new Event("input", { bubbles: true }));
-          textarea.focus();
-        }
-      },
-      h("span", { class: "snippet-item-text" }, text)
-      );
-      list.append(row);
-    });
-
-    const body = h("div", { class: "snippet-popover-body" },
-      h("div", { class: "snippet-popover-header" },
-        h("strong", t("core.snippets.header", { default: "Select Clinical Note" })),
-        h("span", { class: "text-xs text-muted" }, t("core.snippets.hint", { default: "Click to append" }))
-      ),
-      list
-    );
-
-    pop = popover(btn, body, { className: "snippet-popover" });
+    async function save() {
+      const text = textarea.value.trim();
+      if (!text) return;
+      const title = window.prompt(t("core.snippets.name", { default: "Template name" }), text.slice(0, 60));
+      if (!title) return;
+      try {
+        await api.post("/favorites", { kind: DIAGNOSIS_FIELDS.has(fieldName) ? "diagnosis" : "snippet",
+          department_id: dept.id, field: DIAGNOSIS_FIELDS.has(fieldName) ? null : fieldName, title, body: text });
+        load();
+      } catch (err) {
+        list.prepend(h("div", { class: "field-error" }, err.message || String(err)));
+      }
+    }
+    load();
   });
-
   return btn;
 }

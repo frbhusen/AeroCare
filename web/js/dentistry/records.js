@@ -1,6 +1,6 @@
 // Treatments and treatment-plan items for one patient in one dental clinic.
 import {
-  api, h, t, icon, can, dataTable, createForm, openModal, confirmDialog, deleteWithUndo, formatDate, formatMoney,
+  api, h, t, icon, can, dataTable, createForm, getActiveDepartment, openModal, confirmDialog, deleteWithUndo, formatDate, formatMoney,
   todayISO, mount,
 } from "../core/index.js";
 import {
@@ -25,6 +25,27 @@ const commonFields = (meta, doctors, values) => [
   { name: "status", label: t("dentistry.field.status"), type: "select", options: statusOptions(meta), empty: false },
   { name: "doctor_user_id", label: t("dentistry.field.doctor"), type: "select", options: doctors, numeric: true },
 ];
+
+/** Favorite procedures (center + department) with default prices: picking one fills procedure + fee. */
+function procedurePicker(formEl) {
+  const sel = h("select", { class: "select", "aria-label": t("dentistry.fav.pick") }, h("option", { value: "" }, t("dentistry.fav.pick")));
+  sel.hidden = true;
+  let favs = [];
+  const dept = getActiveDepartment();
+  api.get("/favorites", { query: { kind: "procedure", department_id: dept?.id } }).then((res) => {
+    favs = res.items || [];
+    sel.append(...favs.map((f) => h("option", { value: f.id }, f.payload?.price ? `${f.title} — ${formatMoney(f.payload.price)}` : f.title)));
+    sel.hidden = !favs.length;
+  }).catch(() => {});
+  sel.addEventListener("change", () => {
+    const f = favs.find((x) => String(x.id) === sel.value);
+    if (!f) return;
+    formEl.elements.namedItem("procedure").value = f.title;
+    if (f.payload?.price != null) formEl.elements.namedItem("fee").value = f.payload.price;
+    sel.value = "";
+  });
+  return sel;
+}
 
 function cleanTooth(v) {
   if (v.tooth_number != null) v.tooth_number = Number(v.tooth_number);
@@ -126,7 +147,8 @@ export function renderTreatments(panel, { patientId, clinicId, meta }) {
       },
       onCancel: () => modal.close(),
     });
-    const modal = openModal({ title: row ? t("dentistry.treatment.edit") : t("dentistry.treatment.new"), body: [form.el, dl.el], size: "lg" });
+    const modal = openModal({ title: row ? t("dentistry.treatment.edit") : t("dentistry.treatment.new"),
+      body: [procedurePicker(form.el), form.el, dl.el], size: "lg" });
   }
 
   mount(panel, table.el);

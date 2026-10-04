@@ -100,6 +100,11 @@ export const dict = {
     "patients.visit_status.completed": "Completed",
     "patients.visit_status.cancelled": "Cancelled",
 
+    "patients.rx.sets": "Prescription sets",
+    "patients.rx.load_set": "Load a saved set…",
+    "patients.rx.save_set": "Save as set",
+    "patients.rx.set_name": "Name of this prescription set",
+    "patients.rx.set_saved": "Prescription set saved",
     "patients.rx.new": "New Prescription",
     "patients.rx.edit": "Edit Prescription",
     "patients.rx.none": "No prescriptions recorded yet",
@@ -227,6 +232,11 @@ export const dict = {
     "patients.visit_status.completed": "مكتملة",
     "patients.visit_status.cancelled": "ملغاة",
 
+    "patients.rx.sets": "مجموعات الوصفات",
+    "patients.rx.load_set": "تحميل مجموعة محفوظة…",
+    "patients.rx.save_set": "حفظ كمجموعة",
+    "patients.rx.set_name": "اسم مجموعة الوصفة",
+    "patients.rx.set_saved": "تم حفظ مجموعة الوصفة",
     "patients.rx.new": "وصفة طبية جديدة",
     "patients.rx.edit": "تعديل الوصفة",
     "patients.rx.none": "لا توجد وصفات طبية حتى الآن",
