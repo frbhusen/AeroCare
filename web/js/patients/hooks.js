@@ -27,7 +27,8 @@ export function patientTabsFor(ctx) {
     .sort((a, b) => a.order - b.order);
 }
 
-/** fn(ctx, visit) -> href string (or null to fall back to the generic visit drawer). */
+/** fn(ctx, visit) -> href string, false when the environment opened its own view, or null to fall back
+ * to the generic visit drawer. */
 export function registerVisitOpener(environment, fn) {
   openers.set(environment, fn);
 }

@@ -44,7 +44,7 @@ export function register(registry) {
 
   // Visit opener & creator
   registerVisitOpener("ophthalmology", (ctx, visit) => {
-    return `#/d/${ctx.dept.id}/exams?visit_id=${visit.id}`;
+    return `#/d/${ctx.dept?.id || visit.department_id}/exams?visit_id=${visit.id}`;
   });
 
   registerVisitCreator("ophthalmology", (ctx, patient, { onDone } = {}) => {

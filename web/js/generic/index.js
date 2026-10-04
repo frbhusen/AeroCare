@@ -1,188 +1,238 @@
-// Generic clinical environment module entry point
+// Generic medical environment: General Medicine, Pediatrics, Cardiology, Neurology, Nutrition and
+// Superadmin-defined custom departments. Backend: /api/v1/generic (+ /visits, /prescriptions, /files).
 import {
-  api, h, mount, t, can, icon, dataTable, tabs, formatDateTime,
-  openModal, openDrawer, createForm, toastSuccess, toastApiError, emptyState, loadingState, errorState,
+  api, h, mount, t, can, icon, dataTable, formatDateTime, openModal, openDrawer, createForm, handleFormError,
+  toastSuccess, toastApiError, deleteWithUndo, confirmDialog, loadingState, errorState, emptyState, statusPill,
+  patientSearch,
 } from "../core/index.js";
 import { dict } from "./i18n.js";
-import { registerPatientTab, registerVisitOpener, registerVisitCreator } from "../patients/hooks.js";
+import { registerVisitOpener, registerVisitCreator } from "../patients/hooks.js";
+import { prescriptionsPanel } from "../patients/prescriptions.js";
+import { filesPanel } from "../files/panel.js";
+import { patientResultsPanel } from "../laboratory/public.js";
+
+const ENV = ["generic"];
+let metaPromise = null;
+const loadMeta = () => (metaPromise ||= api.get("/generic/meta").catch((e) => { metaPromise = null; throw e; }));
 
 export function register(registry) {
   registry.i18n(dict);
+  registry.route({ area: "department", env: ENV, path: "visits", title: "generic.tab.visits",
+    perm: "medical_records.view", render: renderVisitsPage });
+  registry.menu({ area: "department", env: ENV, key: "generic-visits", path: "visits", label: "generic.tab.visits",
+    icon: "clipboard", perm: "medical_records.view", order: 20 });
 
-  // Department visits route & menu for generic clinical environments (General Medicine, Pediatrics, Cardiology, etc.)
-  registry.route({
-    area: "department",
-    env: ["generic"],
-    path: "visits",
-    title: "generic.tab.visits",
-    perm: "medical_records.view",
-    render: renderDepartmentGenericVisits,
-  });
-
-  registry.menu({
-    area: "department",
-    env: ["generic"],
-    key: "generic-visits",
-    path: "visits",
-    label: "generic.tab.visits",
-    icon: "clipboard",
-    perm: "medical_records.view",
-    order: 20,
-  });
-
-  // Visit opener & creator for generic clinical environments
-  registerVisitOpener("generic", (ctx, visit) => {
-    openGenericVisitDrawer(visit.id);
-    return null; // drawer handled directly
-  });
-
-  registerVisitCreator("generic", (ctx, patient, { onDone } = {}) => {
-    openGenericVisitModal({ ctx, patient, onDone });
-  });
-
-  // Patient profile tab
-  registerPatientTab({
-    key: "generic",
-    label: "generic.tab.visits",
-    env: ["generic"],
-    order: 28,
-    perm: "medical_records.view",
-    render: (panelEl, { patient }) => {
-      mount(panelEl, renderPatientGenericVisitsTable(patient.id));
-    },
-  });
+  registerVisitOpener("generic", (ctx, visit) => { openVisitDrawer(visit.id, { ctx }); return false; });
+  registerVisitCreator("generic", (ctx, patient, { onDone } = {}) => openVisitEditor({ ctx, patient, onDone }));
+  // The patients module's own "Visits" tab lists visits and uses the opener/creator above.
 }
 
-function renderDepartmentGenericVisits(ctx) {
+// ---------------------------------------------------------------- lists
+function visitColumns(withPatient) {
+  return [
+    { key: "visit_at", label: t("generic.col.date"), render: (r) => h("span", { class: "nowrap" }, formatDateTime(r.visit_at)) },
+    withPatient ? { key: "patient", label: t("generic.col.patient"),
+      render: (r) => h("span", h("strong", r.patient?.full_name || "—"), " ", h("span", { class: "muted" }, r.patient?.display_code || "")) } : null,
+    { key: "title", label: t("generic.field.chief_complaint"), render: (r) => r.record?.chief_complaint || r.title || "—" },
+    { key: "clinic", label: t("generic.col.clinic"), render: (r) => r.clinic_name || "" },
+    { key: "author", label: t("generic.col.author"), render: (r) => r.author_name || "—" },
+    { key: "status", label: t("generic.col.status"), render: (r) => statusPill(r.status, "generic.status") },
+  ].filter(Boolean);
+}
+
+function renderVisitsPage(ctx) {
   ctx.setTitle(t("generic.tab.visits"));
+  const clinics = (ctx.dept?.clinics || []);
+  const clinicFilter = clinics.length > 1 ? h("select", { class: "select", style: "max-width:220px",
+    onChange: (e) => table.setQuery({ clinic_id: e.target.value || undefined }) },
+  h("option", { value: "" }, t("generic.filter.all_clinics")), clinics.map((c) => h("option", { value: c.id }, c.name))) : null;
+  const newBtn = can("medical_records.create") ? h("button", { class: "btn btn-primary", type: "button",
+    onClick: () => openVisitEditor({ ctx, onDone: () => table.reload() }) }, icon("plus"), t("generic.visit.new")) : null;
   const table = dataTable({
-    columns: [
-      { key: "visit_at", label: t("patients.visit.date"), render: (r) => h("span", { class: "nowrap" }, formatDateTime(r.visit_at)) },
-      { key: "patient", label: t("patients.field.full_name"), render: (r) => h("strong", r.patient?.full_name || r.patient?.name || `Patient #${r.patient_id}`) },
-      { key: "title", label: t("patients.visit.title"), render: (r) => r.title || "—" },
-      { key: "clinic", label: t("patients.field.clinic"), render: (r) => r.clinic_name || "" },
-      { key: "author", label: t("patients.visit.author"), render: (r) => r.author_name || "—" },
-    ],
-    fetch: (q) => api.get("/patients/visits", { query: { ...q, department_id: ctx.dept?.id } }),
-    onRowClick: (r) => openGenericVisitDrawer(r.id),
+    columns: visitColumns(true),
+    query: { department_id: ctx.dept?.id },
+    fetch: (q) => api.get("/visits", { query: q }),
+    onRowClick: (r) => openVisitDrawer(r.id, { ctx, onChanged: () => table.reload() }),
+    toolbar: [clinicFilter].filter(Boolean),
     empty: { icon: "clipboard", title: t("patients.visit.none") },
   });
-
   return h("div", { class: "page" },
-    h("div", { class: "page-header" },
-      h("h1", t("generic.tab.visits")),
-      h("p", { class: "subtitle" }, ctx.dept?.name)
-    ),
-    table.el
-  );
+    h("div", { class: "page-header row-between" },
+      h("div", h("h1", t("generic.tab.visits")), h("p", { class: "subtitle" }, ctx.dept?.name)), newBtn),
+    table.el);
 }
 
-function renderPatientGenericVisitsTable(patientId) {
-  const table = dataTable({
-    columns: [
-      { key: "visit_at", label: t("patients.visit.date"), render: (r) => h("span", { class: "nowrap" }, formatDateTime(r.visit_at)) },
-      { key: "chief_complaint", label: t("generic.field.chief_complaint"), render: (r) => r.record?.chief_complaint || r.title || "—" },
-      { key: "diagnosis", label: t("generic.field.diagnosis"), render: (r) => r.record?.diagnosis || "—" },
-      { key: "author", label: t("patients.visit.author"), render: (r) => r.author_name || "—" },
-    ],
-    fetch: (q) => api.get(`/generic/patients/${patientId}/visits`, { query: q }),
-    onRowClick: (r) => openGenericVisitDrawer(r.id),
-    empty: { icon: "clipboard", title: t("patients.visit.none") },
-  });
-  return table.el;
+// ---------------------------------------------------------------- editor (create + edit)
+function recordFields(meta, clinics, { creating }) {
+  const vitals = meta.vitals.map((v) => ({
+    name: `vital_${v.key}`, label: t(`generic.vitals.${v.key}`), type: "number", min: v.min, max: v.max,
+    step: v.decimals ? String(10 ** -v.decimals) : "1",
+  }));
+  return [
+    creating && clinics.length > 1 ? { name: "clinic_id", label: t("generic.field.clinic"), type: "select", required: true,
+      numeric: true, empty: false, options: clinics.map((c) => ({ value: c.id, label: c.name })) } : null,
+    creating ? { name: "visit_type", label: t("generic.field.visit_type"), type: "select", empty: false,
+      options: meta.visit_types.map((k) => ({ value: k, label: t(`patients.visit_type.${k}`, { default: k }) })) } : null,
+    { type: "section", label: t("generic.section.vitals") },
+    ...vitals,
+    { type: "section", label: t("generic.section.clinical") },
+    ...meta.text_fields.map((k) => ({ name: k, label: t(`generic.field.${k}`), type: "textarea", rows: 2, span: 2,
+      maxLength: 10000 })),
+  ].filter(Boolean);
 }
 
-function openGenericVisitDrawer(visitId) {
+function splitValues(v, meta) {
+  const vitals = {};
+  for (const m of meta.vitals) {
+    const val = v[`vital_${m.key}`];
+    if (val != null && !Number.isNaN(val)) vitals[m.key] = val;
+  }
+  const record = { vitals };
+  for (const k of meta.text_fields) record[k] = v[k] ?? null;
+  return record;
+}
+
+function recordValues(rec) {
+  const out = { ...(rec || {}) };
+  for (const [k, val] of Object.entries(rec?.vitals || {})) out[`vital_${k}`] = val;
+  return out;
+}
+
+/** Errors come back as record.vitals.<key> / record.<field>: map them onto form field names. */
+function mapErrors(err) {
+  if (!err?.details || typeof err.details !== "object") return err;
+  const d = {};
+  for (const [k, msg] of Object.entries(err.details)) {
+    if (k === "record" && typeof msg === "object") {
+      for (const [rk, rv] of Object.entries(msg)) {
+        if (rk === "vitals" && typeof rv === "object") Object.entries(rv).forEach(([vk, vm]) => { d[`vital_${vk}`] = vm; });
+        else d[rk] = rv;
+      }
+    } else d[k] = msg;
+  }
+  return Object.assign(Object.create(Object.getPrototypeOf(err)), err, { details: d });
+}
+
+async function openVisitEditor({ ctx, patient = null, visit = null, onDone } = {}) {
+  const creating = !visit;
   const body = h("div", loadingState());
-  const drawer = openDrawer({ title: t("generic.visit.title", { id: visitId }), body, size: "lg" });
-
-  api.get(`/generic/visits/${visitId}`).then((v) => {
-    const rec = v.record || {};
-    const vitals = rec.vitals || {};
-
-    const vitalsList = Object.entries(vitals).filter(([, val]) => val != null).map(([k, val]) =>
-      h("div", { class: "pill pill--info" }, `${t(`generic.vitals.${k}`, k)}: ${val}`)
-    );
-
-    mount(body,
-      h("div", { class: "stack gap-md" },
-        h("div", { class: "card card-body" },
-          h("h3", t("patients.visit.date")),
-          h("p", formatDateTime(v.visit_at)),
-          h("h3", { class: "mt-sm" }, t("patients.visit.author")),
-          h("p", v.author_name || "—")
-        ),
-        vitalsList.length ? h("div", { class: "card card-body" },
-          h("h3", t("generic.vitals.title")),
-          h("div", { class: "row gap-sm wrap mt-sm" }, vitalsList)
-        ) : null,
-        h("div", { class: "card card-body" },
-          rec.chief_complaint ? [h("h3", t("generic.field.chief_complaint")), h("p", rec.chief_complaint)] : null,
-          rec.hpi ? [h("h3", { class: "mt-sm" }, t("generic.field.hpi")), h("p", rec.hpi)] : null,
-          rec.examination ? [h("h3", { class: "mt-sm" }, t("generic.field.examination")), h("p", rec.examination)] : null,
-          rec.diagnosis ? [h("h3", { class: "mt-sm" }, t("generic.field.diagnosis")), h("p", rec.diagnosis)] : null,
-          rec.treatment_plan ? [h("h3", { class: "mt-sm" }, t("generic.field.treatment_plan")), h("p", rec.treatment_plan)] : null,
-          rec.notes ? [h("h3", { class: "mt-sm" }, t("generic.field.notes")), h("p", rec.notes)] : null
-        )
-      )
-    );
-  }).catch((e) => {
-    mount(body, errorState(e));
-  });
-}
-
-async function openGenericVisitModal({ ctx, patient, onDone }) {
-  const body = h("div", loadingState());
-  const modal = openModal({ title: t("generic.visit.new"), body, size: "lg" });
+  const modal = openModal({ title: creating ? t("generic.visit.new") : t("generic.visit.edit"), body, size: "lg" });
   let meta;
   try {
-    meta = await api.get("/generic/meta");
+    meta = await loadMeta();
   } catch (e) {
     mount(modal.body, errorState(e));
     return;
   }
+  const deptClinicIds = new Set((ctx?.dept?.clinics || []).map((c) => c.id));
+  const clinics = deptClinicIds.size ? meta.clinics.filter((c) => deptClinicIds.has(c.id)) : meta.clinics;
+  let chosen = patient;
+  const patientBox = h("div");
+  const renderPatient = () => mount(patientBox, chosen
+    ? h("div", { class: "card card-body row-between" },
+      h("div", h("strong", chosen.full_name), " ", h("span", { class: "muted" }, chosen.display_code || "")),
+      creating && !patient ? h("button", { class: "btn btn-sm", type: "button", onClick: () => { chosen = null; renderPatient(); } }, t("core.change", { default: "Change" })) : null)
+    : patientSearch({ autofocus: true, onSelect: (p) => { chosen = p; renderPatient(); } }));
+  renderPatient();
 
-  const clinics = ctx.dept?.clinics || meta.clinics || [];
+  const fields = recordFields(meta, clinics, { creating });
   const form = createForm({
-    fields: [
-      clinics.length > 1 ? {
-        name: "clinic_id", label: t("patients.field.clinic"), type: "select", required: true,
-        numeric: true, options: clinics.map((c) => ({ value: c.id, label: c.name }))
-      } : null,
-      { name: "title", label: t("patients.visit.title"), maxLength: 200 },
-      { name: "chief_complaint", label: t("generic.field.chief_complaint"), type: "textarea", rows: 2 },
-      { name: "hpi", label: t("generic.field.hpi"), type: "textarea", rows: 2 },
-      { name: "examination", label: t("generic.field.examination"), type: "textarea", rows: 2 },
-      { name: "diagnosis", label: t("generic.field.diagnosis"), type: "textarea", rows: 2 },
-      { name: "treatment_plan", label: t("generic.field.treatment_plan"), type: "textarea", rows: 2 },
-    ].filter(Boolean),
-    values: { clinic_id: clinics[0]?.id },
+    fields,
+    values: creating ? { clinic_id: clinics[0]?.id, visit_type: "consultation" } : recordValues(visit.record),
     submitLabel: t("core.save"),
     onCancel: () => modal.close(),
     onSubmit: async (v) => {
+      const record = splitValues(v, meta);
       try {
-        const payload = {
-          patient_id: patient.id,
-          clinic_id: v.clinic_id,
-          title: v.title || null,
-          chief_complaint: v.chief_complaint || null,
-          hpi: v.hpi || null,
-          examination: v.examination || null,
-          diagnosis: v.diagnosis || null,
-          treatment_plan: v.treatment_plan || null,
-        };
-        await api.post("/generic/visits", payload, {
-          offline: true,
-          label: t("generic.visit.new"),
-        });
+        if (creating) {
+          if (!chosen) { toastApiError({ message: t("generic.visit.pick_patient") }); return; }
+          const clinicId = v.clinic_id || clinics[0]?.id;
+          await api.post("/generic/visits", {
+            patient_id: chosen.id, clinic_id: clinicId, visit_type: v.visit_type || "consultation",
+            title: record.chief_complaint ? record.chief_complaint.slice(0, 200) : null, record,
+          }, { offline: true, label: t("generic.visit.new") });
+        } else {
+          if (visit.record) record.version = visit.record.version;
+          await api.put(`/generic/visits/${visit.id}/record`, record);
+        }
         modal.close();
-        toastSuccess(t("core.saved"));
-        if (onDone) onDone();
+        toastSuccess(t("generic.visit.saved"));
+        onDone && onDone();
       } catch (err) {
-        toastApiError(err);
+        handleFormError(form, mapErrors(err));
       }
     },
   });
+  mount(modal.body, h("div", { class: "stack gap-md" }, creating ? patientBox : null, form.el));
+}
 
-  mount(modal.body, form.el);
+// ---------------------------------------------------------------- drawer
+function vitalsView(vitals, bmi) {
+  const pills = [];
+  if (vitals.bp_systolic != null || vitals.bp_diastolic != null) {
+    pills.push(h("span", { class: "pill pill--info" }, `${t("generic.vitals.bp")}: ${vitals.bp_systolic ?? "–"}/${vitals.bp_diastolic ?? "–"}`));
+  }
+  for (const [k, val] of Object.entries(vitals)) {
+    if (k.startsWith("bp_") || val == null) continue;
+    pills.push(h("span", { class: "pill pill--info" }, `${t(`generic.vitals.${k}`)}: ${val}`));
+  }
+  if (bmi) pills.push(h("span", { class: "pill pill--info" }, `${t("generic.vitals.bmi")}: ${bmi}`));
+  return pills.length ? h("div", { class: "row gap-sm wrap" }, pills) : null;
+}
+
+function openVisitDrawer(visitId, { ctx, onChanged } = {}) {
+  const body = h("div", loadingState());
+  const drawer = openDrawer({ title: t("generic.visit.title"), body, size: "lg" });
+
+  async function load() {
+    let v;
+    try {
+      v = await api.get(`/generic/visits/${visitId}`);
+    } catch (e) {
+      mount(body, errorState(e, load));
+      return;
+    }
+    const rec = v.record;
+    const meta = await loadMeta().catch(() => ({ text_fields: [] }));
+    const patient = { id: v.patient_id, full_name: v.patient?.full_name, display_code: v.patient?.display_code };
+    const changed = () => { load(); onChanged && onChanged(); };
+
+    const actions = h("div", { class: "row gap-sm wrap" },
+      can("medical_records.edit") || (!rec && can("medical_records.create")) ? h("button", { class: "btn btn-sm", type: "button",
+        onClick: () => openVisitEditor({ ctx, visit: v, onDone: changed }) }, icon("edit"), t("generic.visit.edit")) : null,
+      can("medical_records.edit") ? h("button", { class: "btn btn-sm", type: "button", onClick: async () => {
+        try {
+          await api.post(`/visits/${v.id}/${v.status === "completed" ? "reopen" : "complete"}`, { version: v.version });
+          changed();
+        } catch (e) { toastApiError(e); }
+      } }, v.status === "completed" ? t("generic.action.reopen") : t("generic.action.complete")) : null,
+      can("medical_records.delete") ? h("button", { class: "btn btn-sm btn-danger", type: "button", onClick: async () => {
+        if (!(await confirmDialog({ danger: true, message: t("patients.visit.delete_confirm") }))) return;
+        await deleteWithUndo(`/visits/${v.id}`, { message: t("generic.deleted"),
+          onDone: () => { drawer.close(); onChanged && onChanged(); }, onUndone: () => onChanged && onChanged() }).catch(() => {});
+      } }, icon("trash"), t("core.delete")) : null);
+
+    const clinical = rec ? meta.text_fields.filter((k) => rec[k]).map((k) =>
+      h("div", h("h4", t(`generic.field.${k}`)), h("p", { class: "pre-wrap" }, rec[k]))) : [];
+
+    mount(body, h("div", { class: "stack gap-md" },
+      h("div", { class: "card card-body stack gap-sm" },
+        h("div", { class: "row-between" },
+          h("div", h("strong", v.patient?.full_name || ""), " ", h("span", { class: "muted" }, v.patient?.display_code || "")),
+          statusPill(v.status, "generic.status")),
+        h("div", { class: "muted" }, `${formatDateTime(v.visit_at)} · ${v.clinic_name || ""} · ${v.author_name || ""}`),
+        rec?.last_edited_name ? h("div", { class: "muted small" }, t("generic.last_edited", { name: rec.last_edited_name })) : null,
+        actions),
+      h("section", { class: "card card-body stack gap-sm" }, h("h3", t("generic.section.vitals")),
+        rec ? (vitalsView(rec.vitals || {}, rec.bmi) || h("p", { class: "muted" }, "—")) : h("p", { class: "muted" }, t("generic.visit.no_record"))),
+      h("section", { class: "card card-body stack gap-sm" }, h("h3", t("generic.section.clinical")),
+        clinical.length ? clinical : h("p", { class: "muted" }, t("generic.visit.no_record"))),
+      h("section", { class: "stack gap-sm" }, h("h3", t("generic.section.prescriptions")),
+        prescriptionsPanel({ ctx, patient, visit: v, compact: true })),
+      can("files.view") ? h("section", { class: "stack gap-sm" }, h("h3", t("generic.section.files")),
+        filesPanel({ ctx, patient, visit: v, compact: true })) : null,
+      patientResultsPanel({ patientId: v.patient_id, patient, clinicId: v.clinic_id, departmentId: v.department_id }).el,
+    ));
+  }
+  load();
 }

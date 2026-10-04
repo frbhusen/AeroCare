@@ -16,6 +16,7 @@ export const dict = {
 
     "patients.field.code": "File Number",
     "patients.field.full_name": "Full Name",
+    "patients.field.created_at": "Registered on",
     "patients.field.phone": "Phone",
     "patients.field.date_of_birth": "Date of Birth",
     "patients.field.gender": "Gender",
@@ -142,6 +143,7 @@ export const dict = {
 
     "patients.field.code": "رقم الإضبارة",
     "patients.field.full_name": "الاسم الكامل",
+    "patients.field.created_at": "تاريخ التسجيل",
     "patients.field.phone": "رقم الهاتف",
     "patients.field.date_of_birth": "تاريخ الميلاد",
     "patients.field.gender": "الجنس",

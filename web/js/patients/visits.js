@@ -44,6 +44,7 @@ export function visitsTimeline({ ctx, patient }) {
 export function openVisit(ctx, visit, { onChange } = {}) {
   const opener = visitOpener(visit.environment);
   const target = opener ? opener(ctx, visit) : null;
+  if (target === false) return; // the environment opened its own view
   if (target) return navigate(target);
   return openVisitDrawer(ctx, visit, { onChange });
 }

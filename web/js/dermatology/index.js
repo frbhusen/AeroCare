@@ -79,7 +79,7 @@ export function register(registry) {
 
   // Visit opener & creator
   registerVisitOpener("dermatology", (ctx, visit) => {
-    return `#/d/${ctx.dept.id}/visits?visit_id=${visit.id}`;
+    return `#/d/${ctx.dept?.id || visit.department_id}/visits?visit_id=${visit.id}`;
   });
 
   registerVisitCreator("dermatology", (ctx, patient, { onDone } = {}) => {

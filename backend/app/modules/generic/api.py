@@ -7,7 +7,7 @@ from backend.app.core.validation import request_json
 from backend.app.models.clinical import VISIT_TYPES
 from backend.app.modules.patients.helpers import accessible_clinics
 from backend.app.modules.patients.summary import register_summary_provider
-from backend.app.modules.patients.visits import visit_json
+from backend.app.modules.patients.visits import serialize_many
 
 from . import service
 
@@ -17,7 +17,7 @@ bp = Blueprint("generic", __name__, url_prefix="/generic")
 
 
 def _out(v, rec):
-    out = visit_json(v)
+    out = serialize_many(v.health_center_id, [v], with_patient=True)[0]
     out["record"] = service.record_json(rec)
     return out
 
