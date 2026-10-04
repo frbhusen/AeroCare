@@ -132,7 +132,7 @@ async function openVisitEditor({ ctx, patient = null, visit = null, onDone } = {
     ? h("div", { class: "card card-body row-between" },
       h("div", h("strong", chosen.full_name), " ", h("span", { class: "muted" }, chosen.display_code || "")),
       creating && !patient ? h("button", { class: "btn btn-sm", type: "button", onClick: () => { chosen = null; renderPatient(); } }, t("core.change", { default: "Change" })) : null)
-    : patientSearch({ autofocus: true, onSelect: (p) => { chosen = p; renderPatient(); } }));
+    : patientSearch({ autofocus: true, onSelect: (p) => { chosen = p; renderPatient(); } }).el);
   renderPatient();
 
   const fields = recordFields(meta, clinics, { creating });

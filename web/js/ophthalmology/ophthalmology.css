@@ -1,0 +1,22 @@
+/* Ophthalmology: OD/OS side-by-side grids (stacked labels on phones). Logical properties only. */
+.oph-grid { display: grid; gap: 0; border: 1px solid var(--border); border-radius: var(--radius, 10px); overflow: hidden; }
+.oph-grid-row { display: grid; grid-template-columns: minmax(130px, 1fr) 2fr 2fr; gap: var(--space-2, 8px);
+  padding-block: 6px; padding-inline: 10px; border-block-end: 1px solid var(--border); align-items: start; }
+.oph-grid-row:last-child { border-block-end: 0; }
+.oph-grid-head { background: var(--surface-2, #f1f5f9); font-weight: 600; }
+.oph-grid-block { padding-block: 8px 4px; padding-inline: 10px; font-weight: 700; color: var(--accent, var(--primary));
+  background: var(--surface-2, #f8fafc); border-block-end: 1px solid var(--border); }
+.oph-grid-label { padding-block-start: 8px; color: var(--text-muted, #64748b); font-size: 0.9rem; }
+.oph-grid-cell .input, .oph-grid-cell .select { width: 100%; }
+.oph-grid-wide { grid-column: 2 / -1; }
+.oph-grid-cell.has-error .input, .oph-grid-cell.has-error .select { border-color: var(--danger, #dc2626); }
+.oph-grid-cell .field-error { color: var(--danger, #dc2626); font-size: 0.8rem; }
+.oph-table tbody th { text-align: start; font-weight: 500; color: var(--text-muted, #64748b); text-transform: none; letter-spacing: normal; font-size: 0.9rem; }
+.oph-table-block th { background: var(--surface-2, #f8fafc); color: var(--accent, var(--primary)); font-weight: 700; }
+.pre-wrap { white-space: pre-wrap; }
+@media (max-width: 640px) {
+  .oph-grid-row { grid-template-columns: 1fr 1fr; }
+  .oph-grid-label { grid-column: 1 / -1; padding-block-start: 0; }
+  .oph-grid-head > div:first-child { display: none; }
+  .oph-grid-wide { grid-column: 1 / -1; }
+}
