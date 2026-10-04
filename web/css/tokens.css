@@ -1,0 +1,101 @@
+/* Design tokens. Center branding (--brand-*) is overridden at runtime from /auth/me
+   center colors; department accent (--accent) from departments[].color. */
+:root {
+  /* palette (AeroDent continuity: navy / ocean / sky) */
+  --c-navy: #0b2942;
+  --c-navy-2: #0c3354;
+  --c-ocean: #0369a1;
+  --c-sky: #0ea5e9;
+  --c-indigo: #312e81;
+
+  /* runtime-overridable branding */
+  --brand-primary: var(--c-ocean);
+  --brand-secondary: var(--c-sky);
+  --accent: var(--brand-primary);
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, #fff);
+  --accent-softer: color-mix(in srgb, var(--accent) 5%, #fff);
+  --accent-strong: color-mix(in srgb, var(--accent) 80%, #000);
+  --accent-ink: #fff;
+
+  /* surfaces & text */
+  --bg: #f3f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #eef2f7;
+  --ink: #0f172a;
+  --ink-2: #334155;
+  --muted: #5b6b80;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --focus: #7dd3fc;
+
+  /* semantic */
+  --success: #047857;
+  --success-bg: #ecfdf5;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #0369a1;
+  --info-bg: #eff6ff;
+  --neutral: #475569;
+  --neutral-bg: #f1f5f9;
+  --purple: #6d28d9;
+  --purple-bg: #f5f3ff;
+
+  /* shape */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.22);
+
+  /* spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+
+  /* typography (no external fonts; Cairo used if installed) */
+  --font: "Cairo", "Segoe UI", "Noto Sans Arabic", "Noto Sans", Tahoma, "Geeza Pro", system-ui, -apple-system, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs: 14px;
+  --fs-md: 16px;
+  --fs-lg: 19px;
+  --fs-xl: 24px;
+  --fs-2xl: 30px;
+  --lh: 1.55;
+
+  /* layout */
+  --topbar-h: 60px;
+  --sidebar-w: 250px;
+  --content-max: 1360px;
+  --z-topbar: 40;
+  --z-drawer: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+}
+
+/* superadmin portal: distinct but related visual language */
+body[data-portal="superadmin"] {
+  --brand-primary: #4338ca;
+  --brand-secondary: #6366f1;
+  --accent: #4338ca;
+  --bg: #f4f4fb;
+}
+
+/* environments (department working areas) */
+body[data-env="dentistry"] {
+  /* AeroDent feel: warm canvas, ocean primary */
+  --bg: #f7f2e8;
+  --surface-2: #fbf8f2;
+}

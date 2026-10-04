@@ -1,0 +1,20 @@
+/* Print: hide chrome, print main content (or #print-root when printing a single element). */
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; color: #000; font-size: 12pt; }
+  .topbar, .sidebar, .app-banner, .toasts, .nav-scrim, .page-actions, .table-toolbar, .pagination,
+  .no-print, .btn, .popover, .overlay, .viewer { display: none !important; }
+  .app { display: block; }
+  .page { padding: 0; max-width: none; }
+  .card { box-shadow: none; border-color: #999; break-inside: avoid; }
+  .table th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .table tr { break-inside: avoid; }
+  .pill, .badge { border: 1px solid #999; }
+  a { color: #000; text-decoration: none; }
+  .print-only { display: block !important; }
+
+  body.printing-element > *:not(#print-root) { display: none !important; }
+  body.printing-element #print-root { display: block !important; }
+}
+.print-only { display: none; }
+#print-root { display: none; }
