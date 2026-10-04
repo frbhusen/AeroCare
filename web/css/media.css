@@ -36,3 +36,9 @@
 @media (max-width: 640px) {
   .viewer-title { max-width: 100%; flex-basis: 100%; }
 }
+
+/* Phone: the quick-search button collapses to its icon (Ctrl K hint is desktop-only). */
+@media (max-width: 640px) {
+  .topbar-search-text, .topbar-kbd { display: none; }
+  .topbar-search-btn { padding-inline: 8px; }
+}

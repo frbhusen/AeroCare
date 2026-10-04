@@ -15,9 +15,20 @@ Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated 
 - **Laboratory & Radiology**: Laboratory test catalog, order workflow, specimen collection, result entry with abnormal flags, PDF report generation. Radiology studies, scheduling, imaging viewer, findings & impressions, report generation, explicit clinic/user sharing.
 - **Frontend Architecture & Modules**: Native ES modules (no bundler), responsive design system (no theme switch, per spec), RTL/LTR Arabic/English internationalization, offline queue with IndexedDB and background replay. All 15 modules (`patients`, `appointments`, `billing`, `inventory`, `files`, `reports`, `admin`, `center-admin`, `dentistry`, `dermatology`, `ophthalmology`, `radiology`, `laboratory`, `pharmacy`, `generic`) fully wired with `index.js`, routes, menus, and widgets.
 
+## Verified in browser (2026-10-04, demo center)
+- Doctor: General Medicine visit create/edit/complete; ophthalmology exam create (inline range errors), view, glasses PDF; patient register; files upload/share.
+- Pharmacy: queue → partial dispense from stock; POS sale via simulated USB scan; catalog; expiry.
+- Center manager: department cards, all center pages, settings save, backup export, audit log.
+- Superadmin: all 7 portal pages load.
+- Arabic RTL at phone width (patients, dental chart).
+
 ## Needs Verification
 - Production deployment on Linux (Nginx/Gunicorn) — deployment configs present in `deploy/`, verification on Linux host pending.
 
 ## Known Issues / Notes
+- Department managers have no department-scoped Settings page yet (staff page exists).
+- First load on the Flask dev server takes ~5 s (many ES modules served one by one); Nginx in production serves them in parallel with caching.
+- Arabic PDF layout not yet checked visually.
+- Patient search results show the raw code (e.g. "2") instead of PAT-000002 in some pickers.
 - Arabic PDF rendering in production requires `fonts-dejavu-core` or suitable fonts installed on Linux.
 - Service worker registration in embedded verification webview requires standard Chrome/Edge browser context.

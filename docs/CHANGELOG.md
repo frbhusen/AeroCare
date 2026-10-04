@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-04 (review of Antigravity session)
+- Fixed: General Medicine visit form sent clinical fields flat, so records were saved empty; screens rebuilt (create/edit/complete/delete, vitals, prescriptions, files, lab/radiology panel).
+- Fixed: files panel uploaded with an invalid category (every upload rejected); added clinic/category picker, rename, explicit sharing dialog, storage usage.
+- Rebuilt ophthalmology UI: full meta-driven OD/OS exam (VA, refraction, IOP, pupils, motility, slit lamp, fundus), edit with version check, inline validation, glasses Rx print.
+- Rebuilt pharmacy UI: dispensing picks the stocked medication (substitution notes), cash POS with USB barcode scanning, medication catalog with stock, expiry view.
+- Added center settings UI: general settings + logo/branding, plan limits and storage, audit log, backup download.
+- Fixed invalid UI permission codes (`pharmacy.sell`, `roles.edit`); visit openers crashing outside a department; patient search component mounted as an object.
+- New tests: UI permission codes exist in the catalog; every literal UI API call matches a backend route.
+- Docs corrected (no theme switch, `user_sessions`, PostgreSQL 15+, dev DB `health_center`).
+
 ## 2026-10-04
 - Backend integration backlog resolved:
   - Clinical billing source integration (`sources.py`) linking dental treatments and pharmacy sales to billing invoices with duplicate check.
