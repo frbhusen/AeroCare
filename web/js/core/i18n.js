@@ -27,6 +27,7 @@ export function registerDictionary(d) {
 
 /** t("patients.title"), t("core.items", {count: 3}) — "{count} items". Missing key -> English -> key. */
 export function t(key, params) {
+  if (typeof params === "string") params = { default: params }; // t(key, fallbackText)
   let s = dicts[lang][key] ?? dicts.en[key];
   if (s == null) {
     if (params && params.default != null) s = params.default;
