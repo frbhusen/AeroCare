@@ -39,7 +39,7 @@ def _t(k, lang):
 
 
 def _dt(s):
-    return to_local(s).strftime("%Y-%m-%d %H:%M") if s else ""
+    return to_local(s).strftime("%m/%d/%Y %H:%M") if s else ""
 
 
 def ref_range(i):

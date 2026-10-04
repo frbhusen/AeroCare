@@ -39,7 +39,7 @@ def report_data(sid):
 
 
 def _dt(v):
-    return to_local(v).strftime("%Y-%m-%d %H:%M") if v else ""
+    return to_local(v).strftime("%m/%d/%Y %H:%M") if v else ""
 
 
 def sections(s, data, lang):

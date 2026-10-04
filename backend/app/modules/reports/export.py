@@ -51,7 +51,7 @@ def _header_pairs(rep, lang):
         pairs.append([_t("view", lang), f["view"]])
     if f.get("days") is not None and rep["filters"].get("view") == "expiry":
         pairs.append([_t("days", lang), str(f["days"])])
-    pairs.append([_t("generated", lang), local_now().strftime("%Y-%m-%d %H:%M")])
+    pairs.append([_t("generated", lang), local_now().strftime("%m/%d/%Y %H:%M")])
     return pairs
 
 

@@ -67,7 +67,7 @@ def prescription_pdf(rx, lang="en"):
     sections.append({"type": "table",
                      "columns": ["#", _t("medication", lang), _t("dose", lang), _t("frequency", lang),
                                  _t("duration", lang), _t("quantity", lang)],
-                     "rows": rows, "widths": [0.5, 4, 1.6, 1.6, 1.4, 0.9],
+                     "rows": rows, "widths": [0.5, 3.4, 1.6, 1.8, 1.4, 1.2],
                      "align": ["center", "start", "start", "start", "start", "end"]})
     if rx.notes:
         sections.append({"type": "heading", "text": _t("notes", lang)})

@@ -149,7 +149,9 @@ def _wrap_lines(text, font, size, width):
 
 
 def _para(text, style, width):
-    lines = _wrap_lines(text, style.fontName, style.fontSize, max(width - 2, 10))
+    # Table cells have 6pt padding on each side: wrap to the *inner* width ourselves so the Paragraph
+    # never re-wraps an already visual-ordered (bidi) line, which would scramble Arabic word order.
+    lines = _wrap_lines(text, style.fontName, style.fontSize, max(width - 14, 10))
     return Paragraph("<br/>".join(escape(x) for x in lines) or "&nbsp;", style)
 
 
@@ -259,7 +261,7 @@ def render_document(center, department=None, kind="document", title="", sections
         story.extend(_section(sec, st, width, rtl, accent, align_map, regular, bold, style))
 
     footer_text = tpl.get("footer_text") or _get(center, "document_footer") or ""
-    printed = t("printed_at", lang, dt=local_now().strftime("%Y-%m-%d %H:%M"))
+    printed = t("printed_at", lang, dt=local_now().strftime("%m/%d/%Y %H:%M"))
 
     def footer(cv, n, total):
         cv.saveState()
@@ -423,11 +425,11 @@ def format_money(amount, currency=None):
 
 
 def format_dt(dt, with_time=True):
-    """Local (Asia/Damascus) display: YYYY-MM-DD HH:MM."""
+    """Local (Asia/Damascus) display, month/day order (spec §68): MM/DD/YYYY HH:MM."""
     from backend.app.core.timeutil import to_local
     if dt is None:
         return ""
     if isinstance(dt, datetime):
         dt = to_local(dt)
-        return dt.strftime("%Y-%m-%d %H:%M" if with_time else "%Y-%m-%d")
-    return dt.isoformat()
+        return dt.strftime("%m/%d/%Y %H:%M" if with_time else "%m/%d/%Y")
+    return dt.strftime("%m/%d/%Y") if hasattr(dt, "strftime") else str(dt)
