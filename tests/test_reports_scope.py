@@ -18,7 +18,7 @@ def test_catalog_per_role(app, world, client_for):
     body = m.get(BASE).get_json()
     assert {r["key"] for r in body["reports"]} == {
         "patients", "appointments", "doctor_activity", "clinic_activity", "department_activity", "revenue",
-        "outstanding", "services", "treatments", "inventory", "laboratory", "radiology"}
+        "outstanding", "services", "treatments", "inventory", "laboratory", "radiology", "cash_close"}
     assert body["formats"] == ["xlsx", "pdf"] and len(body["clinics"]) == 8
     doc = client_for(a["users"]["dent_doc1"])
     body = doc.get(BASE).get_json()
@@ -30,7 +30,7 @@ def test_catalog_per_role(app, world, client_for):
     assert "department_activity" in keys(client_for(a["users"]["rec_dent"]))
     assert "department_activity" not in keys(client_for(a["users"]["rec_dent1"]))
     set_perm(app, a, "rec_dent1", "billing.view", False)
-    assert not {"revenue", "outstanding", "services"} & keys(client_for(a["users"]["rec_dent1"]))
+    assert not {"revenue", "outstanding", "services", "cash_close"} & keys(client_for(a["users"]["rec_dent1"]))
 
 
 def test_department_manager_scope(app, world, client_for):
