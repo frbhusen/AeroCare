@@ -43,7 +43,7 @@ export function patientSearch({ onSelect, placeholder, query = {}, minChars = 2,
       show(items.map((p, i) => h("button", { class: "search-result", type: "button", role: "option", dataset: { i },
         onMouseDown: (e) => { e.preventDefault(); pick(i); } },
       h("span", { class: "search-result-name" }, patientName(p)),
-      h("span", { class: "search-result-meta" }, [p.code && h("span", { class: "ltr" }, p.code), p.phone && h("span", { class: "ltr" }, p.phone),
+      h("span", { class: "search-result-meta" }, [(p.display_code || p.code) && h("span", { class: "ltr" }, p.display_code || patientCode(p.code)), p.phone && h("span", { class: "ltr" }, p.phone),
         p.date_of_birth && formatDate(p.date_of_birth, { year: "always" })].filter(Boolean).flatMap((x, j) => (j ? [" · ", x] : [x]))))));
     } catch (e) {
       if (my !== seq) return;
@@ -84,4 +84,10 @@ export function patientSearch({ onSelect, placeholder, query = {}, minChars = 2,
 export function patientName(p) {
   if (!p) return "";
   return p.full_name || p.name || [p.first_name, p.father_name, p.last_name].filter(Boolean).join(" ") || `#${p.id}`;
+}
+
+/** Display form of a patient code: 12 -> "PAT-000012" (strings already formatted pass through). */
+export function patientCode(code) {
+  if (code == null || code === "") return "";
+  return /^\d+$/.test(String(code)) ? `PAT-${String(code).padStart(6, "0")}` : String(code);
 }
