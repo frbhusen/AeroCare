@@ -3,6 +3,7 @@ Prescriptions themselves are core (models/clinical.py); stock comes from invento
 from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, Index, Integer, JSON, Numeric, String, Text, func
 
 from backend.app.extensions import db
+from backend.app.schema import register_sql
 from backend.app.models.base import AuthorSnapshotMixin, TenantMixin, tenant_fk, tenant_unique
 
 QTY = Numeric(14, 3)
@@ -64,6 +65,7 @@ class Sale(db.Model, TenantMixin, AuthorSnapshotMixin):
     total = Column(MONEY, nullable=False)
     paid_amount = Column(MONEY, nullable=False, default=0)
     notes = Column(Text)
+    invoice_id = Column(Integer)  # billing invoice created for this sale (no FK: billing purges independently)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
@@ -83,3 +85,6 @@ class SaleItem(db.Model, TenantMixin):
     unit_price = Column(MONEY, nullable=False)
     line_total = Column(MONEY, nullable=False)
     lots = Column(JSON, nullable=False, default=list)
+
+
+register_sql("pharmacy_sales_invoice", "ALTER TABLE pharmacy_sales ADD COLUMN IF NOT EXISTS invoice_id integer;")

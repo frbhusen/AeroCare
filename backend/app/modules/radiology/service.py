@@ -205,7 +205,7 @@ def _list(p, stmt):
 
 LIST_FILTERS = {
     "status": Enum(STATUSES + ("active",)), "priority": Enum(PRIORITIES), "exam_type": Enum(EXAM_TYPES),
-    "patient_id": Id(), "clinic_id": Id(), "date_from": DateTime(), "date_to": DateTime(),
+    "patient_id": Id(), "clinic_id": Id(), "department_id": Id(), "date_from": DateTime(), "date_to": DateTime(),
 }
 
 
@@ -235,6 +235,8 @@ def list_requested(args):
     f = validate(args, LIST_FILTERS)
     stmt = select(RadiologyStudy).where(p.tenant(RadiologyStudy), RadiologyStudy.live(), requester_clause(p))
     stmt = _filters(stmt, f, RadiologyStudy.requesting_clinic_id)
+    if f.get("department_id"):
+        stmt = stmt.where(RadiologyStudy.requesting_department_id == f["department_id"])
     return _list(p, stmt.order_by(RadiologyStudy.requested_at.desc(), RadiologyStudy.id.desc()))
 
 

@@ -237,7 +237,7 @@ def dispense(p, rx_id, data):
 def sale_json(s, items=None):
     out = {"id": s.id, "clinic_id": s.clinic_id, "patient_id": s.patient_id, "customer_name": s.customer_name,
            "total": mstr(s.total), "paid_amount": mstr(s.paid_amount), "change": mstr(max(s.paid_amount - s.total, 0)),
-           "balance_due": mstr(max(s.total - s.paid_amount, 0)), "notes": s.notes, "author_name": s.author_name,
+           "balance_due": mstr(max(s.total - s.paid_amount, 0)), "notes": s.notes, "invoice_id": s.invoice_id, "author_name": s.author_name,
            "created_at": iso(s.created_at)}
     if items is not None:
         out["items"] = [{"id": i.id, "inventory_item_id": i.inventory_item_id, "item_name": i.item_name,
@@ -278,8 +278,34 @@ def create_sale(p, data):
     db.session.add_all(rows)
     s.total = total
     s.paid_amount = data["paid_amount"] if data.get("paid_amount") is not None else total
-    db.session.commit()
+    if data.get("create_invoice"):
+        _bill_sale(p, s, rows, items)  # commits sale + invoice together, then records the payment
+    else:
+        db.session.commit()
     return sale_json(s, rows)
+
+
+def _bill_sale(p, s, rows, items):
+    """Create an issued billing invoice for a patient sale (+ a cash payment for what was paid).
+    The sale, stock movements and invoice are committed in one transaction by billing's
+    create_invoice; the payment is a second step (on failure the invoice stays issued/unpaid)."""
+    if not s.patient_id:
+        raise ValidationError("Invalid input", details={"patient_id": "is required to create an invoice"})
+    try:
+        from backend.app.modules.billing import service as billing
+    except ImportError:  # pragma: no cover - billing module not installed
+        raise ValidationError("Billing is not available.", code="billing_unavailable")
+    p.require("billing.create", clinic_id=s.clinic_id)
+    lines = [{"kind": "medicine" if items[r.inventory_item_id].is_medication else "product",
+              "description": r.item_name, "qty": r.quantity, "unit_price": r.unit_price,
+              "reference_type": "pharmacy_sale", "reference_id": s.id} for r in rows]
+    inv = billing.create_invoice(p, {"patient_id": s.patient_id, "clinic_id": s.clinic_id, "items": lines,
+                                     "issue": True, "notes": f"Pharmacy sale #{s.id}"})
+    s.invoice_id = inv.id
+    db.session.commit()
+    amount = min(s.paid_amount, s.total)
+    if amount > 0:
+        billing.add_payment(p, inv.id, {"amount": amount, "method": "cash"})
 
 
 def _sale_clause(p):

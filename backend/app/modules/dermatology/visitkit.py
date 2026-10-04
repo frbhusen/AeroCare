@@ -10,15 +10,18 @@ Lifecycle:
 """
 import logging
 
+import re
+
 from sqlalchemy import event, func, or_, select
 
 from backend.app.core.api import page_params
 
 from backend.app.core.errors import NotFound, ValidationError
 from backend.app.core.storage import get_storage
-from backend.app.core.timeutil import iso
+from backend.app.core.timeutil import iso, local_day_bounds
+from backend.app.core.validation import Date, Id, Str
 from backend.app.extensions import db
-from backend.app.models import Clinic, StoredFile, Visit
+from backend.app.models import Clinic, Patient, StoredFile, Visit
 from backend.app.services import clinical, deletion
 
 log = logging.getLogger("hc.visitkit")
@@ -121,6 +124,53 @@ def list_for_patient(p, model, patient_id, environment, clinic_id=None):
     if clinic_id:
         clinical.require_environment(p, clinic_id, environment)
         stmt = stmt.where(model.clinic_id == clinic_id)
+    return stmt.order_by(Visit.visit_at.desc(), model.id.desc())
+
+
+LIST_ARGS = {"department_id": Id(), "clinic_id": Id(), "q": Str(max_len=100), "date_from": Date(), "date_to": Date()}
+
+
+def patient_json(pid, name, code):
+    return {"id": pid, "full_name": name, "display_code": clinical.format_patient_code(code)}
+
+
+def search_patients(stmt, q):
+    """Filter a statement already joined to Patient by name / phone / PAT code."""
+    q = (q or "").strip()
+    if not q:
+        return stmt
+    digits = re.sub(r"\D", "", q)
+    conds = [Patient.search_name.contains(clinical.normalize_name(q), autoescape=True)]
+    if digits and (q.upper().startswith("PAT") or q.isdigit()):
+        conds.append(Patient.code == int(digits[:9]))
+    if len(digits) >= 3:
+        conds.append(Patient.phone_digits.contains(digits, autoescape=True))
+    return stmt.where(or_(*conds))
+
+
+def scope_filters(p, stmt, model, environment, args, date_col):
+    if args.get("department_id"):
+        p.require(department_id=args["department_id"])
+        stmt = stmt.where(model.department_id == args["department_id"])
+    if args.get("clinic_id"):
+        clinical.require_environment(p, args["clinic_id"], environment)
+        stmt = stmt.where(model.clinic_id == args["clinic_id"])
+    if date_col is None:
+        return search_patients(stmt, args.get("q"))
+    if args.get("date_from"):
+        stmt = stmt.where(date_col >= local_day_bounds(args["date_from"])[0])
+    if args.get("date_to"):
+        stmt = stmt.where(date_col < local_day_bounds(args["date_to"])[1])
+    return search_patients(stmt, args.get("q"))
+
+
+def department_list_stmt(p, model, environment, args):
+    """Visit-owned records across the caller's clinics (optionally one department/clinic), with patient."""
+    p.require("medical_records.view")
+    stmt = (scoped_record_stmt(p, model).add_columns(Patient.id, Patient.full_name, Patient.code)
+            .join(Patient, (Patient.id == model.patient_id) & (Patient.health_center_id == model.health_center_id))
+            .where(Patient.live()))
+    stmt = scope_filters(p, stmt, model, environment, args, Visit.visit_at)
     return stmt.order_by(Visit.visit_at.desc(), model.id.desc())
 
 

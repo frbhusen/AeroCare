@@ -6,7 +6,7 @@ from backend.app.core.errors import Conflict, ValidationError
 from backend.app.core.timeutil import iso, utcnow
 from backend.app.core.validation import DateTime, Enum, Id, JsonDict, List, Str, Text, validate
 from backend.app.extensions import db
-from backend.app.models import StoredFile, Visit
+from backend.app.models import Clinic, StoredFile, Visit
 from backend.app.services import files as file_service
 
 from . import visitkit
@@ -41,10 +41,25 @@ CREATE_SCHEMA = {"visit_id": Id(), "patient_id": Id(), "clinic_id": Id(), **VISI
 UPDATE_SCHEMA = {**VISIT_FIELDS, **FIELDS}
 
 
-def meta():
+def derm_clinic_ids(p):
+    return sorted(c for c, d in p.clinic_department.items() if p.department_env.get(d) == ENV)
+
+
+def clinic_names(p, ids):
+    if not ids:
+        return {}
+    return dict(db.session.execute(select(Clinic.id, Clinic.name).where(p.tenant(Clinic), Clinic.id.in_(list(ids)))).all())
+
+
+def meta(p=None):
+    clinics = []
+    if p:
+        ids = derm_clinic_ids(p)
+        names = clinic_names(p, ids)
+        clinics = [{"id": c, "name": names.get(c), "department_id": p.clinic_department[c]} for c in ids]
     return {"severities": list(SEVERITIES), "visit_types": list(visitkit.VISIT_TYPES),
             "visit_statuses": list(visitkit.VISIT_STATUSES), "photo_categories": list(PHOTO_CATEGORIES),
-            "body_regions": catalog()}
+            "body_regions": catalog(), "clinics": clinics}
 
 
 def _dedupe(seq):
@@ -79,6 +94,22 @@ def list_patient_visits(p, patient_id, clinic_id=None):
     out = visitkit.paginate_rows(stmt)
     counts = _photo_counts(p, [r[0].id for r in out["items"]])
     out["items"] = [to_json(*r, photo_count=counts.get(r[0].id, 0)) for r in out["items"]]
+    return out
+
+
+LIST_ARGS = {**visitkit.LIST_ARGS, "severity": Enum(SEVERITIES)}
+
+
+def list_department_visits(p, args):
+    """Dermatology visits across the caller's clinics (filters: department, clinic, q, dates, severity)."""
+    args = validate(args, LIST_ARGS)
+    stmt = visitkit.department_list_stmt(p, DermVisitRecord, ENV, args)
+    if args.get("severity"):
+        stmt = stmt.where(DermVisitRecord.severity == args["severity"])
+    out = visitkit.paginate_rows(stmt)
+    counts = _photo_counts(p, [r[0].id for r in out["items"]])
+    out["items"] = [{**to_json(*r[:3], photo_count=counts.get(r[0].id, 0)), "patient": visitkit.patient_json(*r[3:])}
+                    for r in out["items"]]
     return out
 
 

@@ -6,7 +6,7 @@ from backend.app.core.errors import Conflict, ValidationError
 from backend.app.core.timeutil import iso, utcnow
 from backend.app.core.validation import DateTime, Enum, Id, JsonDict, Str, Text, validate
 from backend.app.extensions import db
-from backend.app.models import Visit
+from backend.app.models import Clinic, Visit
 from backend.app.modules.dermatology import visitkit
 
 from . import schemas
@@ -41,9 +41,24 @@ EYES = [{"code": "right_eye", "abbr": "OD", "en": "Right eye", "ar": "العين
         {"code": "left_eye", "abbr": "OS", "en": "Left eye", "ar": "العين اليسرى"}]
 
 
-def meta():
+def oph_clinic_ids(p):
+    return sorted(c for c, d in p.clinic_department.items() if p.department_env.get(d) == ENV)
+
+
+def clinic_names(p, ids):
+    if not ids:
+        return {}
+    return dict(db.session.execute(select(Clinic.id, Clinic.name).where(p.tenant(Clinic), Clinic.id.in_(list(ids)))).all())
+
+
+def meta(p=None):
+    clinics = []
+    if p:
+        ids = oph_clinic_ids(p)
+        names = clinic_names(p, ids)
+        clinics = [{"id": c, "name": names.get(c), "department_id": p.clinic_department[c]} for c in ids]
     return {"visit_types": list(visitkit.VISIT_TYPES), "visit_statuses": list(visitkit.VISIT_STATUSES),
-            "eye_fields": schemas.describe(), "glasses_fields": schemas.describe(schemas.GLASSES), "eyes": EYES}
+            "eye_fields": schemas.describe(), "glasses_fields": schemas.describe(schemas.GLASSES), "eyes": EYES, "clinics": clinics}
 
 
 def _blocks(data):
@@ -70,6 +85,13 @@ def list_patient_exams(p, patient_id, clinic_id=None):
     stmt = visitkit.list_for_patient(p, OphthalmologyExam, patient_id, ENV, clinic_id)
     out = visitkit.paginate_rows(stmt)
     out["items"] = [to_json(*r) for r in out["items"]]
+    return out
+
+
+def list_department_exams(p, args):
+    args = validate(args, visitkit.LIST_ARGS)
+    out = visitkit.paginate_rows(visitkit.department_list_stmt(p, OphthalmologyExam, ENV, args))
+    out["items"] = [{**to_json(*r[:3]), "patient": visitkit.patient_json(*r[3:])} for r in out["items"]]
     return out
 
 

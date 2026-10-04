@@ -142,3 +142,16 @@ def test_summary(oph, app):
         s = service.patient_summary(principal_for(app, a["users"]["oph_doc"]["id"]), oph["pid"])
         assert s["exam_count"] == 1 and s["recent"][0]["od"] == {"va": "6/6", "iop": 16.5}
         assert service.patient_summary(principal_for(app, a["users"]["derm_doc"]["id"]), oph["pid"]) is None
+
+
+def test_department_list_and_glasses_pdf(oph, world, client_for):
+    a, d, eid = oph["a"], oph["doc"], oph["exam"]["id"]
+    r = d.get(f"{BASE}/exams?department_id={a['departments']['ophthalmology']}").get_json()
+    assert r["total"] == 1 and r["items"][0]["patient"]["id"] == oph["pid"]
+    for lang in ("en", "ar"):
+        r = d.get(f"{BASE}/exams/{eid}/glasses.pdf?lang={lang}")
+        assert r.status_code == 200 and r.data.startswith(b"%PDF") and r.mimetype == "application/pdf"
+    assert client_for(a["users"]["derm_doc"]).get(f"{BASE}/exams/{eid}/glasses.pdf").status_code == 404
+    assert client_for(world["B"]["users"]["manager"]).get(f"{BASE}/exams/{eid}/glasses.pdf").status_code == 404
+    d.patch(f"{BASE}/exams/{eid}", json={"version": 1, "glasses": {}})
+    assert d.get(f"{BASE}/exams/{eid}/glasses.pdf").status_code == 422

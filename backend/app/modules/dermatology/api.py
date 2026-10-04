@@ -19,7 +19,7 @@ def uploads_from_request():
 @bp.get("/meta")
 @login_required
 def meta():
-    return jsonify(service.meta())
+    return jsonify(service.meta(current_principal()))
 
 
 @bp.get("/body-regions")
@@ -33,6 +33,12 @@ def body_regions():
 def list_visits(patient_id):
     args = query_args({"clinic_id": Id()})
     return jsonify(service.list_patient_visits(current_principal(), patient_id, args.get("clinic_id")))
+
+
+@bp.get("/visits")
+@login_required
+def list_department_visits():
+    return jsonify(service.list_department_visits(current_principal(), dict(request.args)))
 
 
 @bp.post("/visits")

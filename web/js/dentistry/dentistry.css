@@ -1,0 +1,718 @@
+/* Dentistry module styles (logical properties, responsive, high-contrast dental chart) */
+
+/* ---------- General page & summary ---------- */
+.dent-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.dent-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--sp-3);
+  margin-block: var(--sp-2);
+}
+
+.dent-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dent-stat .stat-label {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.dent-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.dent-tooth-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 28px;
+  padding: 2px 6px;
+  background: var(--surface-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  color: var(--ink);
+}
+
+/* ---------- Odontogram Toolbar & Controls ---------- */
+.dent-chart-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-3);
+}
+
+.dent-segmented {
+  display: inline-flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  gap: 2px;
+}
+
+.dent-segmented .btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  min-height: 28px;
+  transition: all 0.15s ease;
+}
+
+.dent-segmented .btn:hover {
+  color: var(--ink);
+  background: var(--surface-3);
+}
+
+.dent-segmented .btn[aria-pressed="true"],
+.dent-segmented .btn.is-active {
+  background: var(--accent);
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Main Odontogram Canvas ---------- */
+.dent-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dent-chart-inner {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dent-sides {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: var(--sp-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dent-arch-title {
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  padding: 2px 0;
+}
+
+.dent-arch-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sp-5); /* Midline separation between left and right quadrants */
+  min-inline-size: max-content;
+}
+
+.dent-quadrant {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dent-occlusal {
+  height: 2px;
+  margin: var(--sp-2) auto;
+  inline-size: 85%;
+  background: linear-gradient(90deg, transparent 0%, var(--line-strong) 15%, var(--line-strong) 85%, transparent 100%);
+  opacity: 0.6;
+}
+
+/* ---------- Tooth Button Component ---------- */
+.dent-tooth {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 38px;
+  block-size: 82px;
+  padding: 4px 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+  color: inherit;
+}
+
+.dent-tooth:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+.dent-tooth:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  z-index: 3;
+}
+
+.dent-tooth-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-2);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dent-tooth-sublabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1;
+  margin-block-start: 1px;
+}
+
+.dent-tooth-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 46px;
+  pointer-events: none;
+}
+
+.dent-tooth-shape {
+  inline-size: 32px;
+  block-size: 46px;
+  display: block;
+}
+
+.dent-tooth-shape path {
+  fill: var(--dent-tooth-fill, #ffffff);
+  stroke: var(--dent-tooth-stroke, #94a3b8);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  transition: fill 0.15s ease, stroke 0.15s ease;
+}
+
+.dent-tooth-surf {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  background: var(--surface-3);
+  padding: 1px 3px;
+  border-radius: 2px;
+  line-height: 1;
+  max-inline-size: 34px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Notes indicator dot */
+.dent-tooth.has-notes::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 3px;
+  inset-inline-end: 3px;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 1px #fff;
+}
+
+/* Condition visual marker overlay */
+.dent-tooth-mark {
+  position: absolute;
+  pointer-events: none;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* ---------- Condition Themes (Teeth, Swatches, Quick Actions) ---------- */
+/* Healthy / Sound */
+.dent-c-healthy {
+  --dent-tooth-fill: #ffffff;
+  --dent-tooth-stroke: #94a3b8;
+  --dent-color: #10b981;
+}
+.dent-swatch.dent-c-healthy { background: #ffffff; border-color: #94a3b8; }
+
+/* Caries / Decay */
+.dent-c-decay, .dent-c-decayed {
+  --dent-tooth-fill: #fee2e2;
+  --dent-tooth-stroke: #ef4444;
+  --dent-color: #ef4444;
+}
+.dent-c-decay .dent-tooth-mark::before {
+  content: "•";
+  color: #dc2626;
+  font-size: 20px;
+}
+.dent-swatch.dent-c-decay, .dent-swatch.dent-c-decayed { background: #ef4444; border-color: #dc2626; }
+.dent-action.dent-c-decay { border-color: #fca5a5; color: #b91c1c; background: #fee2e2; }
+.dent-action.dent-c-decay:hover { background: #fecaca; }
+
+/* Filling / Restored (Composite) */
+.dent-c-filling, .dent-c-filled {
+  --dent-tooth-fill: #dbeafe;
+  --dent-tooth-stroke: #2563eb;
+  --dent-color: #2563eb;
+}
+.dent-swatch.dent-c-filling, .dent-swatch.dent-c-filled { background: #3b82f6; border-color: #2563eb; }
+.dent-action.dent-c-filling { border-color: #bfdbfe; color: #1d4ed8; background: #dbeafe; }
+.dent-action.dent-c-filling:hover { background: #bfdbfe; }
+
+/* Amalgam (Metal Restoration) */
+.dent-c-amalgam {
+  --dent-tooth-fill: #cbd5e1;
+  --dent-tooth-stroke: #475569;
+  --dent-color: #64748b;
+}
+.dent-swatch.dent-c-amalgam { background: #64748b; border-color: #475569; }
+.dent-action.dent-c-amalgam { border-color: #cbd5e1; color: #334155; background: #e2e8f0; }
+.dent-action.dent-c-amalgam:hover { background: #cbd5e1; }
+
+/* Crown / Prosthetic */
+.dent-c-crown, .dent-c-crowned {
+  --dent-tooth-fill: #fef3c7;
+  --dent-tooth-stroke: #d97706;
+  --dent-color: #f59e0b;
+}
+.dent-swatch.dent-c-crown, .dent-swatch.dent-c-crowned { background: #f59e0b; border-color: #d97706; }
+.dent-action.dent-c-crown { border-color: #fde68a; color: #b45309; background: #fef3c7; }
+.dent-action.dent-c-crown:hover { background: #fde68a; }
+
+/* Root Canal (RCT / Endodontic) */
+.dent-c-rct, .dent-c-root_canal {
+  --dent-tooth-fill: #f3e8ff;
+  --dent-tooth-stroke: #9333ea;
+  --dent-color: #8b5cf6;
+}
+.dent-c-rct .dent-tooth-mark::before {
+  content: "┃";
+  color: #7e22ce;
+  font-size: 14px;
+}
+.dent-swatch.dent-c-rct, .dent-swatch.dent-c-root_canal { background: #8b5cf6; border-color: #7e22ce; }
+.dent-action.dent-c-rct { border-color: #e9d5ff; color: #6b21a8; background: #f3e8ff; }
+.dent-action.dent-c-rct:hover { background: #e9d5ff; }
+
+/* Extract Indicated */
+.dent-c-extract {
+  --dent-tooth-fill: #ffe4e6;
+  --dent-tooth-stroke: #e11d48;
+  --dent-color: #e11d48;
+}
+.dent-c-extract .dent-tooth-mark::before {
+  content: "✕";
+  color: #e11d48;
+}
+.dent-swatch.dent-c-extract { background: #e11d48; border-color: #be123c; }
+.dent-action.dent-c-extract { border-color: #fecdd3; color: #be123c; background: #ffe4e6; }
+.dent-action.dent-c-extract:hover { background: #fecdd3; }
+
+/* Implant */
+.dent-c-implant {
+  --dent-tooth-fill: #ccfbf1;
+  --dent-tooth-stroke: #0d9488;
+  --dent-color: #0d9488;
+}
+.dent-swatch.dent-c-implant { background: #0d9488; border-color: #0f766e; }
+.dent-action.dent-c-implant { border-color: #99f6e4; color: #115e59; background: #ccfbf1; }
+.dent-action.dent-c-implant:hover { background: #99f6e4; }
+
+/* Missing Tooth */
+.dent-c-missing {
+  --dent-tooth-fill: transparent;
+  --dent-tooth-stroke: #cbd5e1;
+  --dent-color: #94a3b8;
+  opacity: 0.45;
+}
+.dent-c-missing .dent-tooth-shape path {
+  stroke-dasharray: 4 2;
+}
+.dent-swatch.dent-c-missing { background: repeating-linear-gradient(45deg, #e2e8f0, #e2e8f0 3px, #cbd5e1 3px, #cbd5e1 6px); border-color: #94a3b8; }
+.dent-action.dent-c-missing { border-color: #e2e8f0; color: #64748b; background: #f8fafc; }
+
+/* Bridge */
+.dent-c-bridge {
+  --dent-tooth-fill: #fef9c3;
+  --dent-tooth-stroke: #ca8a04;
+  --dent-color: #eab308;
+}
+.dent-swatch.dent-c-bridge { background: #eab308; border-color: #ca8a04; }
+
+/* Veneer */
+.dent-c-veneer {
+  --dent-tooth-fill: #ecfdf5;
+  --dent-tooth-stroke: #059669;
+  --dent-color: #10b981;
+}
+.dent-swatch.dent-c-veneer { background: #10b981; border-color: #059669; }
+
+/* Fracture */
+.dent-c-fracture, .dent-c-fractured {
+  --dent-tooth-fill: #ffedd5;
+  --dent-tooth-stroke: #ea580c;
+  --dent-color: #f97316;
+}
+.dent-swatch.dent-c-fracture, .dent-swatch.dent-c-fractured { background: #f97316; border-color: #ea580c; }
+
+/* Sealant */
+.dent-c-sealant {
+  --dent-tooth-fill: #e0f2fe;
+  --dent-tooth-stroke: #0284c7;
+  --dent-color: #0284c7;
+}
+.dent-swatch.dent-c-sealant { background: #0284c7; border-color: #0369a1; }
+
+/* Clear condition quick action */
+.dent-action.dent-c-clear {
+  border-color: var(--line-strong);
+  color: var(--ink-2);
+  background: var(--surface);
+}
+.dent-action.dent-c-clear:hover {
+  background: var(--surface-3);
+}
+
+/* ---------- Legend ---------- */
+.dent-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+}
+
+.dent-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dent-swatch {
+  display: inline-block;
+  inline-size: 13px;
+  block-size: 13px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+/* ---------- Tooth Edit Drawer ---------- */
+.dent-cond-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.dent-cond-row .select {
+  flex: 1;
+  min-height: 40px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.dent-cond-apply {
+  min-height: 40px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding-inline: var(--sp-3);
+  font-weight: 700;
+}
+
+.dent-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 6px;
+  margin-block: var(--sp-2) var(--sp-3);
+}
+
+.dent-action {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border-width: 1.5px;
+  border-style: solid;
+  font-weight: 600;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+}
+
+.dent-action:hover, .dent-action:focus-visible {
+  filter: brightness(0.95);
+}
+
+.dent-action.is-active {
+  box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+  transform: translateY(-1px);
+}
+
+.dent-surfaces {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dent-surface {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  min-width: 44px;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+}
+
+.dent-surface input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.dent-surface:has(input:checked) {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.28);
+}
+
+.dent-subtitle {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-block: var(--sp-3) var(--sp-2);
+  padding-block-end: 4px;
+  border-block-end: 1px solid var(--line);
+}
+
+.dent-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dent-history-list li {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ---------- X-Ray Gallery ---------- */
+.dent-xray-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-3);
+  margin-block-start: var(--sp-3);
+}
+
+.dent-xray-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.dent-xray-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.dent-xray-thumb {
+  background: #0f172a;
+  block-size: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dent-xray-thumb img {
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  object-fit: contain;
+}
+
+.dent-xray-icon {
+  color: #64748b;
+  font-size: 32px;
+}
+
+.dent-xray-meta {
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-xs);
+}
+
+.dent-xray-name {
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Timeline Component ---------- */
+.dent-timeline {
+  margin-block-start: var(--sp-3);
+}
+
+.dent-timeline-filter {
+  gap: var(--sp-2);
+  margin-block-end: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.dent-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  position: relative;
+}
+
+.dent-timeline-list::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 8px;
+  inset-block-end: 8px;
+  inset-inline-start: 19px;
+  inline-size: 2px;
+  background: var(--line);
+}
+
+.dent-tl {
+  position: relative;
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+
+.dent-tl-icon {
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.dent-tl-body {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-xs);
+}
+
+@media (max-width: 768px) {
+  .dent-tooth {
+    inline-size: 32px;
+    block-size: 74px;
+    padding: 2px 1px;
+  }
+  .dent-tooth-shape {
+    inline-size: 26px;
+    block-size: 38px;
+  }
+  .dent-arch-row {
+    gap: var(--sp-2);
+  }
+}

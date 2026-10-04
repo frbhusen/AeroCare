@@ -125,7 +125,7 @@ def patient_identity(pt):
 def item_json(i, show_results):
     out = {"id": i.id, "test_id": i.test_id, "test_code": i.test_code, "test_name": i.test_name,
            "category_name": i.category_name, "unit": i.unit, "result_type": i.result_type,
-           "choices": i.choices or [], "ref_low": _num(i.ref_low), "ref_high": _num(i.ref_high),
+           "choices": i.choices or [], "normal_choices": i.normal_choices or [], "ref_low": _num(i.ref_low), "ref_high": _num(i.ref_high),
            "ref_text": i.ref_text}
     if show_results:
         out.update({"result_value": i.result_value, "numeric_value": _num(i.numeric_value),
@@ -208,7 +208,7 @@ def _list(p, stmt):
 
 LIST_FILTERS = {
     "status": Enum(STATUSES + ("active",)), "priority": Enum(PRIORITIES), "patient_id": Id(), "clinic_id": Id(),
-    "date_from": DateTime(), "date_to": DateTime(),
+    "department_id": Id(), "date_from": DateTime(), "date_to": DateTime(),
 }
 
 
@@ -238,9 +238,10 @@ def list_requested(args):
         raise Forbidden("You do not have permission to view lab requests.", details={"permission": "lab.request"})
     f = validate(args, LIST_FILTERS)
     stmt = select(LabRequest).where(p.tenant(LabRequest), LabRequest.live(), requester_clause(p))
-    stmt = _filters(stmt, f, LabRequest.requesting_clinic_id).order_by(LabRequest.requested_at.desc(),
-                                                                         LabRequest.id.desc())
-    return _list(p, stmt)
+    stmt = _filters(stmt, f, LabRequest.requesting_clinic_id)
+    if f.get("department_id"):
+        stmt = stmt.where(LabRequest.requesting_department_id == f["department_id"])
+    return _list(p, stmt.order_by(LabRequest.requested_at.desc(), LabRequest.id.desc()))
 
 
 def list_queue(args):

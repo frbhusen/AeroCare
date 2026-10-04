@@ -16,8 +16,10 @@ from .service import clinic_filter, resolve_clinic, resolve_visit, visible_patie
 
 OWNER_TYPE = "dental_xray"
 
-# Purge: the trigger on dental_xrays deletes the file row; the purger removes these bytes.
-deletion.register("dental_xray", XRay, files=lambda o: StoredFile.id == o.file_id)
+# The staged entity is the X-ray's StoredFile row: while staged it is hidden from generic file
+# lists AND (via the join in _query) from X-ray lists; undo restores both. Purging the file
+# cascades to dental_xrays (fk_dxray_file ON DELETE CASCADE) and the purger removes the bytes.
+deletion.register("dental_xray", StoredFile, files=lambda f: StoredFile.id == f.id)
 
 META_SCHEMA = {
     "filename": Str(max_len=255),
@@ -75,8 +77,8 @@ def upload(p, patient_id, form, uploads):
     up.stream.seek(0)
     patient = writable_patient(p, patient_id, clinic_id, dept)
     visit = resolve_visit(p, data.get("visit_id"), clinic_id, patient.id)
-    # visit_id is kept on the X-ray row only (see docs/modules/dentistry.md, core FK note).
     (f,) = files.store_upload(p, [up], clinic_id=clinic_id, department_id=dept, patient_id=patient.id,
+                              visit_id=visit.id if visit else None,
                               category="xray", owner_type=OWNER_TYPE, commit=False)
     try:
         x = XRay(health_center_id=p.center_id, clinic_id=clinic_id, department_id=dept, patient_id=patient.id,
@@ -130,6 +132,7 @@ def update_xray(p, xid, body):
             setattr(x, k, data[k])
     if "visit_id" in data:
         x.visit_id = resolve_visit(p, data["visit_id"], x.clinic_id, x.patient_id).id if data["visit_id"] else None
+        f.visit_id = x.visit_id
     if "filename" in data:
         f.display_name = data["filename"]
     db.session.commit()
@@ -137,9 +140,9 @@ def update_xray(p, xid, body):
 
 
 def delete_xray(p, xid):
-    x, _ = _get(p, xid)
+    x, f = _get(p, xid)
     p.require("medical_records.delete", clinic_id=x.clinic_id)
-    return deletion.stage(p, x, "dental_xray", label=f"X-ray {x.filename}"[:255])
+    return deletion.stage(p, f, "dental_xray", label=f"X-ray {x.filename}"[:255])
 
 
 def verify_xray(p, xid):

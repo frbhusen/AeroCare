@@ -213,7 +213,7 @@ def label(a):
 # ---------------------------------------------------------------- notifications
 def notify(p, a, type_, title):
     notifications.notify(p.center_id, type_, title, body=f"{to_local(a.starts_at).strftime('%m/%d %H:%M')}",
-                         link=f"/appointments/{a.id}", clinic_id=a.clinic_id, department_id=a.department_id,
+                         link=f"#/d/{a.department_id}/appointments?id={a.id}", clinic_id=a.clinic_id, department_id=a.department_id,
                          user_ids=[a.doctor_id] if a.doctor_id else None, exclude_user_id=p.user.id)
 
 

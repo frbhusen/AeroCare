@@ -56,6 +56,13 @@ def test_upload_metadata_and_file_record(app, dent):
     assert c.patch(f"{BASE}/xrays/{x['id']}", json={"type": "mri", "version": 2}).status_code == 422
     ev = c.get(f"{BASE}/patients/{pid}/timeline").get_json()["events"]
     assert any(e["type"] == "xray" and e["file_id"] == x["file"]["id"] for e in ev)
+    # visit link is mirrored on the stored file
+    vid = c.post(f"{BASE}/treatments", json={"patient_id": pid, "procedure": "rct", "create_visit": True}
+                 ).get_json()["visit_id"]
+    x2 = _upload(c, pid, visit_id=str(vid)).get_json()
+    assert x2["visit_id"] == vid
+    with app.app_context(), tenancy.scoped("tenant", a["center_id"]):
+        assert db.session.get(StoredFile, x2["file"]["id"]).visit_id == vid
 
 
 def test_upload_validation(dent):
@@ -112,12 +119,17 @@ def test_xray_delete_undo_and_purge_removes_bytes(app, dent):
     a, pid = dent["A"], dent["pid"]
     c = dent["c"](a["users"]["dent_doc1"])
     x = _upload(c, pid).get_json()
+    def generic_ids():
+        return [f["id"] for f in c.get(f"/api/v1/files?patient_id={pid}").get_json()["items"]]
+    assert x["file"]["id"] in generic_ids()
     r = c.delete(f"{BASE}/xrays/{x['id']}")
     assert r.status_code == 202
     assert c.get(f"{BASE}/xrays/{x['id']}").status_code == 404
     assert c.get(f"{BASE}/patients/{pid}/xrays").get_json()["items"] == []
+    assert x["file"]["id"] not in generic_ids()  # hidden from generic file lists during the undo window
     assert c.post("/api/v1/undo", json={"undo_token": r.get_json()["undo_token"]}).status_code == 200
     assert c.get(f"{BASE}/xrays/{x['id']}").status_code == 200
+    assert x["file"]["id"] in generic_ids()
     from backend.app.core.storage import get_storage
     from backend.app.models import StoredFile
     with app.app_context(), tenancy.scoped("tenant", a["center_id"]):

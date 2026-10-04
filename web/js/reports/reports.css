@@ -1,0 +1,39 @@
+/* Reports module (logical properties only). */
+.reports-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-block-end: 12px; }
+.reports-chip {
+  border: 1px solid var(--line, #d9dee3); background: var(--surface, #fff); color: var(--ink-2, #333);
+  border-radius: 999px; padding-block: 6px; padding-inline: 14px; font: inherit; font-size: var(--fs-sm, 0.875rem);
+  cursor: pointer;
+}
+.reports-chip:hover { border-color: var(--accent, var(--brand-primary, #0f766e)); }
+.reports-chip.is-active {
+  background: var(--accent, var(--brand-primary, #0f766e)); border-color: var(--accent, var(--brand-primary, #0f766e));
+  color: var(--accent-ink, #fff); font-weight: 600;
+}
+.reports-filters { margin-block-end: 12px; }
+.reports-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.reports-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.reports-nodates { margin: 0; }
+.reports-colpicker { padding: 8px; min-width: 220px; max-height: 60vh; overflow-y: auto; gap: 4px; }
+.reports-colpicker-item { gap: 8px; align-items: center; cursor: pointer; padding-block: 2px; }
+.reports-table td.num, .reports-table th.num { text-align: end; white-space: nowrap; }
+.reports-table tfoot td { font-weight: 700; border-block-start: 2px solid var(--line, #d9dee3); }
+.reports-notes { margin-block-start: 8px; }
+.reports-print-head { margin-block-end: 8px; }
+.reports-print-title { font-weight: 700; font-size: 1.1rem; }
+
+@media (max-width: 640px) {
+  .reports-fields { grid-template-columns: 1fr 1fr; }
+  .reports-page .page-actions { flex-wrap: wrap; }
+}
+
+@media print {
+  .reports-print-head { display: block !important; }
+  .reports-table { font-size: 10pt; }
+  .reports-table thead { display: table-header-group; }
+  .reports-table tr { break-inside: avoid; }
+  .reports-table.table-stack thead { display: table-header-group !important; }
+  .reports-table.table-stack tr { display: table-row !important; }
+  .reports-table.table-stack td { display: table-cell !important; }
+  .reports-table.table-stack td::before { content: none !important; }
+}

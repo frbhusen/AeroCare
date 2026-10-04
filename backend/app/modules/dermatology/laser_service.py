@@ -56,8 +56,23 @@ def _before_purge(sess):
 deletion.register(ENTITY, LaserSession, before_purge=_before_purge)
 
 
-def meta():
-    return {"body_regions": catalog(), "sides": list(SIDES), "photo_categories": list(PHOTO_CATEGORIES)}
+def derm_clinic_ids(p):
+    return sorted(c for c, d in p.clinic_department.items() if p.department_env.get(d) == ENV)
+
+
+def clinic_names(p, ids):
+    if not ids:
+        return {}
+    return dict(db.session.execute(select(Clinic.id, Clinic.name).where(p.tenant(Clinic), Clinic.id.in_(list(ids)))).all())
+
+
+def meta(p=None):
+    clinics = []
+    if p:
+        ids = derm_clinic_ids(p)
+        names = clinic_names(p, ids)
+        clinics = [{"id": c, "name": names.get(c), "department_id": p.clinic_department[c]} for c in ids]
+    return {"body_regions": catalog(), "sides": list(SIDES), "photo_categories": list(PHOTO_CATEGORIES), "clinics": clinics}
 
 
 # ---- helpers ------------------------------------------------------------------
@@ -179,6 +194,35 @@ def list_sessions(p, patient_id, clinic_id=None):
     rows = db.session.execute(stmt.limit(per_page).offset((page - 1) * per_page)).all()
     total = db.session.execute(select(func.count()).select_from(stmt.order_by(None).subquery())).scalar_one()
     return {"items": _serialize_rows(p, rows), "page": page, "per_page": per_page, "total": total}
+
+
+def list_department(p, args):
+    """Sessions across the caller's clinics. upcoming=1 -> sessions whose next session is due from now on."""
+    from . import visitkit
+    args = validate(args, {**visitkit.LIST_ARGS, "upcoming": Bool()})
+    p.require("medical_records.view")
+    stmt = (_scoped_stmt(p).add_columns(Patient.id, Patient.full_name, Patient.code)
+            .join(Patient, (Patient.id == LaserSession.patient_id)
+                  & (Patient.health_center_id == LaserSession.health_center_id)).where(Patient.live()))
+    if args.get("upcoming"):
+        stmt = stmt.where(LaserSession.next_session_at >= utcnow()).order_by(LaserSession.next_session_at,
+                                                                             LaserSession.id)
+        date_col = LaserSession.next_session_at
+    else:
+        stmt = stmt.order_by(LaserSession.session_date.desc(), LaserSession.id.desc())
+        date_col = None
+        if args.get("date_from"):
+            stmt = stmt.where(LaserSession.session_date >= args["date_from"])
+        if args.get("date_to"):
+            stmt = stmt.where(LaserSession.session_date <= args["date_to"])
+    stmt = visitkit.scope_filters(p, stmt, LaserSession, ENV, args, date_col)
+    page, per_page = page_params(25)
+    rows = db.session.execute(stmt.limit(per_page).offset((page - 1) * per_page)).all()
+    total = db.session.execute(select(func.count()).select_from(stmt.order_by(None).subquery())).scalar_one()
+    items = _serialize_rows(p, [r[:2] for r in rows])
+    for it, r in zip(items, rows):
+        it["patient"] = visitkit.patient_json(*r[2:])
+    return {"items": items, "page": page, "per_page": per_page, "total": total}
 
 
 def history(p, patient_id, clinic_id=None):

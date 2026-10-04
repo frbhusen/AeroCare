@@ -14,6 +14,7 @@ import { fetchMe, applySession } from "../auth/session.js";
 import { renderLogin } from "../auth/login.js";
 import { setOfflineUserId } from "../offline/idb.js";
 import { errorState } from "../components/states.js";
+import { initOmniSearchHotkeys } from "../components/omni-search.js";
 
 const appRoot = document.getElementById("app");
 const AUTH_MESSAGES = {
@@ -63,6 +64,7 @@ function showLogin(message) {
 
 async function boot() {
   applyLang();
+  initOmniSearchHotkeys();
   registerPortal(registry);
   registerCenter(registry);
   registerDepartmentCore(registry);

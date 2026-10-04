@@ -57,7 +57,7 @@ def list_sales():
 def create_sale():
     data = validate(request_json(), {
         "clinic_id": Id(), "patient_id": Id(), "customer_name": Str(max_len=200), "paid_amount": Money(),
-        "notes": Str(max_len=2000),
+        "notes": Str(max_len=2000), "create_invoice": Bool(),
         "items": List(Obj({"inventory_item_id": Id(required=True), "quantity": _qty(), "unit_price": Money(),
                            "lot_id": Id()}), min_items=1, max_items=100, required=True)})
     return jsonify(service.create_sale(current_principal(), data)), 201

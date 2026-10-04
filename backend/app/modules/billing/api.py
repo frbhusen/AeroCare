@@ -11,7 +11,7 @@ from backend.app.core.validation import (COLOR_RE, Bool, Date, DateTime, Enum, I
                                          Obj, Str, Text, query_args, request_json, validate)
 from backend.app.extensions import db
 from backend.app.services import deletion, documents
-from . import pricing, printing, service, summary as summary_svc, templates
+from . import pricing, printing, service, sources, summary as summary_svc, templates
 from .models import (INVOICE_STATUSES, ITEM_KINDS, PAYMENT_METHODS, TEMPLATE_KINDS, DocumentTemplate, Invoice,
                      InvoiceItem, Service)
 
@@ -26,6 +26,7 @@ def _null_service_refs(svc):
 deletion.register("billing_service", Service, before_purge=_null_service_refs)
 deletion.register("invoice", Invoice)
 deletion.register("document_template", DocumentTemplate)
+sources.register_summary()
 
 
 def _lang():
@@ -51,6 +52,23 @@ def meta():
                     "categories": pricing.categories(p), "summary_groups": list(summary_svc.GROUPS),
                     "can": {k: p.has(k) for k in ("billing.view", "billing.create", "billing.edit", "billing.delete",
                                                   "services.manage", "settings.edit")}})
+
+
+@bp.get("/doctors")
+@login_required(perm="billing.view")
+def doctors():
+    """Doctors selectable on an invoice for a clinic: its doctors + its department's manager."""
+    from sqlalchemy import or_, select
+    from backend.app.models import User
+    p = current_principal()
+    args = query_args({"clinic_id": Id(required=True)})
+    clinic = pricing._scoped_clinic(p, args["clinic_id"])
+    rows = db.session.execute(select(User.id, User.name, User.role).where(
+        User.health_center_id == p.center_id, User.status == "active",
+        or_((User.role == "doctor") & (User.clinic_id == clinic.id),
+            (User.role == "department_manager") & (User.department_id == clinic.department_id)))
+        .order_by(User.name)).all()
+    return jsonify({"items": [{"id": i, "name": n, "role": r} for i, n, r in rows]})
 
 
 # ---------------------------------------------------------------- services
@@ -188,6 +206,22 @@ def list_invoices():
 def create_invoice():
     data = validate(request_json(), INVOICE_SCHEMA)
     inv = service.create_invoice(current_principal(), data)
+    return jsonify(printing.serialize_invoice(inv)), 201
+
+
+@bp.get("/sources/<source_type>/<int:source_id>")
+@login_required(perm="billing.view")
+def preview_source(source_type, source_id):
+    return jsonify(sources.preview_source(current_principal(), source_type, source_id))
+
+
+@bp.post("/invoices/from-source")
+@login_required(perm="billing.create")
+def invoice_from_source():
+    data = validate(request_json(), {"source_type": Enum(sources.SOURCE_TYPES, required=True),
+                                     "source_id": Id(required=True), "clinic_id": Id(), "unit_price": Money(),
+                                     "issue": Bool(), "notes": Text(max_len=4000), "allow_duplicate": Bool()})
+    inv = sources.create_from_source(current_principal(), data)
     return jsonify(printing.serialize_invoice(inv)), 201
 
 

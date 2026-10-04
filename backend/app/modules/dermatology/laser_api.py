@@ -13,7 +13,7 @@ from .regions import catalog
 @bp.get("/laser/meta")
 @login_required
 def laser_meta():
-    return jsonify(svc.meta())
+    return jsonify(svc.meta(current_principal()))
 
 
 @bp.get("/laser/body-regions")
@@ -41,6 +41,12 @@ def laser_history(patient_id):
 def laser_next_number(patient_id):
     args = query_args({"clinic_id": Id(required=True)})
     return jsonify(svc.next_number(current_principal(), patient_id, args["clinic_id"]))
+
+
+@bp.get("/laser/sessions")
+@login_required
+def laser_list_department():
+    return jsonify(svc.list_department(current_principal(), dict(request.args)))
 
 
 @bp.post("/laser/sessions")

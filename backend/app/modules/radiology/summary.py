@@ -19,8 +19,7 @@ def radiology_summary(p, patient):
     return {"title": "Radiology", "items": [
         {"id": s.id, "status": s.status, "exam_type": s.exam_type, "body_region": s.body_region,
          "requested_at": iso(s.requested_at), "finalized_at": iso(s.finalized_at),
-         "impression": s.impression if s.status == "finalized" else None,
-         "link": f"#/radiology/studies/{s.id}"} for s in rows]}
+         "impression": s.impression if s.status == "finalized" else None} for s in rows]}
 
 
 def register():

@@ -127,3 +127,15 @@ def test_patient_purge_with_history(app, world, client_for):
     expire_and_purge(app)
     assert platform_exec(app, lambda db: db.session.get(Patient, pt)) is None
     assert platform_exec(app, lambda db: db.session.get(Prescription, rx["id"])) is None
+
+
+def test_prescription_pdf(app, world, client_for):
+    a, pt = _setup(world, client_for)
+    doc = client_for(a["users"]["dent_doc1"])
+    rx = _rx(doc, pt, a["clinics"]["dent1"], notes="بعد الطعام",
+             items=[{"medication_name": "أموكسيسيلين", "dose": "500mg", "quantity": 21, "instructions": "x"}])
+    for lang in ("en", "ar"):
+        r = doc.get(f"/api/v1/prescriptions/{rx['id']}/pdf", query_string={"lang": lang})
+        assert r.status_code == 200 and r.mimetype == "application/pdf" and r.data[:4] == b"%PDF"
+    assert client_for(a["users"]["dent_doc2"]).get(f"/api/v1/prescriptions/{rx['id']}/pdf").status_code == 404
+    assert client_for(world["B"]["users"]["manager"]).get(f"/api/v1/prescriptions/{rx['id']}/pdf").status_code == 404

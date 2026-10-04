@@ -1,13 +1,13 @@
 # Deployment (dedicated Linux server)
 
 Internet → Nginx (TLS, static `web/`) → Gunicorn (`backend.wsgi:app`) → Flask → PostgreSQL + secure file storage.
-Files: `deploy/nginx/healthcenter.conf`, `deploy/gunicorn.conf.py`, `deploy/systemd/healthcenter.service`, `deploy/healthcenter.env.example`. Backups/restore: `docs/OPERATIONS.md`.
+Files: `deploy/nginx/healthcenter.conf`, `deploy/gunicorn.conf.py`, `deploy/systemd/healthcenter.service`, `deploy/healthcenter.env.example`. Backups/restore: `docs/OPERATIONS.md`. Local setup: `docs/LOCAL_DEPLOYMENT.md`.
 
 ## 1. Packages (Debian/Ubuntu)
 ```
 apt install nginx postgresql python3-venv python3-dev build-essential fonts-dejavu-core certbot python3-certbot-nginx
 ```
-PostgreSQL 15+ required (RLS FORCE, `pg_trgm`, `btree_gist`).
+PostgreSQL 17+ required (RLS FORCE, `pg_trgm`, `btree_gist`).
 
 ## 2. Database roles
 ```sql

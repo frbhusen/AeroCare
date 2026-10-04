@@ -1,0 +1,79 @@
+/* Appointments module (logical properties only). */
+.appt-toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; justify-content: space-between; margin-block-end: var(--sp-3); }
+.appt-nav, .appt-filters { gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.appt-date-input { inline-size: auto; }
+.appt-filters .select { inline-size: auto; min-inline-size: 10rem; }
+[dir="rtl"] .appt-flip { display: inline-block; transform: scaleX(-1); }
+.appt-range-title { font-size: var(--fs-md); margin-block: var(--sp-2) var(--sp-3); }
+
+/* Week grid: 7 columns on wide screens, list on phones */
+.appt-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--sp-2); }
+.appt-day { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-block-size: 8rem; display: flex; flex-direction: column; }
+.appt-day.is-today { border-color: var(--accent, var(--brand-primary)); box-shadow: inset 0 3px 0 var(--accent, var(--brand-primary)); }
+.appt-day-head { display: flex; align-items: center; justify-content: space-between; padding: var(--sp-1) var(--sp-2); border-block-end: 1px solid var(--line); }
+.appt-day-list { display: flex; flex-direction: column; gap: var(--sp-1); padding: var(--sp-1); }
+.appt-day-empty { padding: var(--sp-3); text-align: center; }
+.appt-card { display: block; inline-size: 100%; text-align: start; background: var(--surface-2); border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--info); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-2); cursor: pointer; font: inherit; color: inherit; }
+.appt-card:hover, .appt-card:focus-visible { border-color: var(--line-strong); background: var(--surface-3); }
+.appt-card--arrived { border-inline-start-color: var(--purple); }
+.appt-card--in_progress { border-inline-start-color: var(--warning); }
+.appt-card--completed { border-inline-start-color: var(--success); }
+.appt-card--no_show { border-inline-start-color: var(--danger); opacity: .75; }
+.appt-card--cancelled { border-inline-start-color: var(--neutral); opacity: .6; }
+.appt-card-time { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-1); font-size: var(--fs-sm); flex-wrap: wrap; }
+.appt-card-time .pill { font-size: var(--fs-xs); }
+.appt-card-patient { font-weight: 600; overflow-wrap: anywhere; }
+.appt-card-meta { overflow-wrap: anywhere; }
+
+.appt-table .appt-row { cursor: pointer; }
+.appt-row--cancelled td, .appt-row--no_show td { color: var(--muted); }
+.appt-table td.actions { text-align: end; }
+
+/* Forms */
+.appt-times { gap: var(--sp-3); }
+.appt-times .field { flex: 1; }
+.appt-patient-chip { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); flex-wrap: wrap; }
+.appt-patient-name { font-weight: 600; }
+.appt-newpatient { margin-block-start: var(--sp-2); padding: var(--sp-2); border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+.appt-newpatient-row { gap: var(--sp-2); flex-wrap: wrap; }
+.appt-newpatient-row .input { flex: 1; min-inline-size: 10rem; }
+.appt-fixed { padding: var(--sp-2) 0; font-weight: 600; }
+.appt-rec { border-block-start: 1px solid var(--line); padding-block-start: var(--sp-3); }
+.appt-rec-body { margin-block-start: var(--sp-2); }
+.appt-wd-row { gap: var(--sp-2); flex-wrap: wrap; }
+.appt-wd { padding: var(--sp-1) var(--sp-2); border: 1px solid var(--line); border-radius: var(--radius-pill); }
+.appt-conflict ul { margin-block: var(--sp-1) 0; padding-inline-start: var(--sp-5); }
+.appt-alerts:empty { display: none; }
+.appt-alerts { margin-block-end: var(--sp-3); }
+
+/* Detail drawer */
+.appt-detail-head { margin-block-end: var(--sp-3); }
+.appt-status-btns { margin-block-end: var(--sp-4); }
+.appt-detail-actions { margin-block-start: var(--sp-4); }
+.appt-notes { white-space: pre-wrap; }
+.appt-wa-msg { white-space: pre-wrap; font-family: var(--font); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: var(--sp-3); margin-block: var(--sp-3); }
+
+/* Widget */
+.appt-widget-list { list-style: none; margin: 0 0 var(--sp-2); padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* Print */
+.appt-print-head { text-align: center; margin-block-end: 12pt; }
+.appt-print-center { font-weight: 700; font-size: 14pt; }
+.appt-print-head h1 { font-size: 16pt; margin: 4pt 0; }
+.appt-print-day h2 { font-size: 12pt; margin-block: 10pt 4pt; }
+.appt-print-foot { margin-block-start: 12pt; font-size: 9pt; color: #555; }
+.appt-slip th { text-align: start; inline-size: 35%; }
+
+@media (max-width: 1100px) {
+  .appt-week { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .appt-week { grid-template-columns: 1fr; }
+  .appt-day { min-block-size: 0; }
+  .appt-toolbar { flex-direction: column; align-items: stretch; }
+  .appt-filters .select { flex: 1; }
+}
+@media print {
+  .appt-week { grid-template-columns: 1fr; }
+}

@@ -11,6 +11,8 @@ import { toastApiError } from "../components/toast.js";
 import { logout, openChangePassword, exitSupport } from "../auth/session.js";
 import { openSyncPanel } from "../offline/sync-panel.js";
 
+import { openOmniSearch } from "../components/omni-search.js";
+
 const POLL_MS = 60000;
 let pollTimer = null;
 
@@ -25,7 +27,12 @@ export function buildTopbar({ area, dept, onToggleNav }) {
       h("span", { class: "brand-name" }, area === "admin" ? t("core.portal.superadmin") : center?.name || t("core.app_name")),
       h("span", { class: "brand-sub" }, area === "admin" ? t("core.app_name") : t(`core.role.${p.role}`, { default: p.role || "" }))));
 
-  const actions = h("div", { class: "topbar-actions" }, connectivityIndicator());
+  const searchBtn = p.center_id ? h("button", { class: "topbar-search-btn", type: "button", onClick: openOmniSearch },
+    icon("search"),
+    h("span", { class: "topbar-search-text" }, t("core.search.quick", { default: "Search" })),
+    h("kbd", { class: "topbar-kbd" }, "Ctrl K")) : null;
+
+  const actions = h("div", { class: "topbar-actions" }, searchBtn, connectivityIndicator());
   if (p.center_id) actions.append(notificationsBell());
   actions.append(userMenuButton(user, p));
 

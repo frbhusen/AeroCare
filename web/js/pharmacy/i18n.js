@@ -1,0 +1,75 @@
+// Pharmacy module translations (en, ar)
+export const dict = {
+  en: {
+    "pharmacy.title": "Pharmacy",
+    "pharmacy.subtitle": "Prescription dispensing, medication sales, and stock management",
+    "pharmacy.tab.queue": "Prescription Queue",
+    "pharmacy.tab.sales": "Point of Sale (POS)",
+    "pharmacy.tab.catalog": "Medication Catalog",
+    "pharmacy.tab.expiry": "Expiring Medications",
+
+    "pharmacy.col.rx_number": "Rx #",
+    "pharmacy.col.patient": "Patient",
+    "pharmacy.col.doctor": "Prescribing Doctor",
+    "pharmacy.col.clinic": "Originating Clinic",
+    "pharmacy.col.date": "Prescribed Date",
+    "pharmacy.col.status": "Dispensing Status",
+    "pharmacy.col.items": "Medications",
+    "pharmacy.col.total": "Total Amount",
+
+    "pharmacy.status.pending": "Pending",
+    "pharmacy.status.partially_dispensed": "Partially Dispensed",
+    "pharmacy.status.dispensed": "Fully Dispensed",
+    "pharmacy.status.cancelled": "Cancelled",
+
+    "pharmacy.dispense.action": "Dispense",
+    "pharmacy.dispense.title": "Dispense Prescription #{id}",
+    "pharmacy.dispense.complete": "Mark Prescription as Completely Dispensed",
+    "pharmacy.dispense.substitute": "Substitute Medication",
+    "pharmacy.dispense.success": "Medication dispensed and inventory deducted.",
+    "pharmacy.dispense.notes": "Pharmacist Dispensing Notes",
+
+    "pharmacy.sales.new": "New Sale",
+    "pharmacy.sales.customer": "Customer Name",
+    "pharmacy.sales.paid": "Amount Paid",
+    "pharmacy.sales.create_invoice": "Generate Billing Invoice",
+    "pharmacy.sales.empty": "No sales recorded yet",
+    "pharmacy.queue.empty": "No prescriptions in the queue",
+  },
+  ar: {
+    "pharmacy.title": "الصيدلية",
+    "pharmacy.subtitle": "صرف الوصفات الطبية، مبيعات الأدوية وإدارة المخزون الدوائي",
+    "pharmacy.tab.queue": "طابور صرف الوصفات",
+    "pharmacy.tab.sales": "نقطة البيع (POS)",
+    "pharmacy.tab.catalog": "دليل الأدوية",
+    "pharmacy.tab.expiry": "الأدوية القريبة من الانتهاء",
+
+    "pharmacy.col.rx_number": "رقم الوصفة",
+    "pharmacy.col.patient": "المريض",
+    "pharmacy.col.doctor": "الطبيب الواصف",
+    "pharmacy.col.clinic": "العيادة المصدرة",
+    "pharmacy.col.date": "تاريخ الوصفة",
+    "pharmacy.col.status": "حالة الصرف",
+    "pharmacy.col.items": "الأدوية",
+    "pharmacy.col.total": "الإجمالي",
+
+    "pharmacy.status.pending": "بانتظار الصرف",
+    "pharmacy.status.partially_dispensed": "مصروف جزئياً",
+    "pharmacy.status.dispensed": "مصروف بالكامل",
+    "pharmacy.status.cancelled": "ملغاة",
+
+    "pharmacy.dispense.action": "صرف الدواء",
+    "pharmacy.dispense.title": "صرف الوصفة الطبية رقم #{id}",
+    "pharmacy.dispense.complete": "تحديد الوصفة كمصروفة بالكامل",
+    "pharmacy.dispense.substitute": "بديل دوائي",
+    "pharmacy.dispense.success": "تم صرف الدواء وخصمه من المخزون بنجاح.",
+    "pharmacy.dispense.notes": "ملاحظات الصيدلاني",
+
+    "pharmacy.sales.new": "بيع جديد",
+    "pharmacy.sales.customer": "اسم العميل",
+    "pharmacy.sales.paid": "المبلغ المدفوع",
+    "pharmacy.sales.create_invoice": "إنشاء فاتورة مالية في قسم الحسابات",
+    "pharmacy.sales.empty": "لا توجد مبيعات مسجلة حتى الآن",
+    "pharmacy.queue.empty": "لا توجد وصفات طبية في طابور الصرف",
+  }
+};

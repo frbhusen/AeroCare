@@ -1,5 +1,5 @@
 """Dental timeline for one patient: visits, treatments, plan items, X-rays and prescriptions in the
-principal's accessible dental clinics (or one clinic). Newest first."""
+principal's accessible dental clinics (or one clinic), plus appointments (appointments.view). Newest first."""
 from sqlalchemy import select
 
 from backend.app.core.timeutil import iso, to_local
@@ -62,6 +62,18 @@ def patient_timeline(p, patient_id, clinic_id=None):
         events.append({"type": "prescription", "id": rx.id, "date": d, "time": t, "title": "Prescription",
                        "description": rx.notes, "status": rx.status, "visit_id": rx.visit_id,
                        "clinic_id": rx.clinic_id, "author_name": rx.author_name})
+    try:
+        from backend.app.modules.appointments.models import Appointment
+    except ImportError:  # pragma: no cover - appointments module absent
+        Appointment = None
+    if Appointment is not None and p.has("appointments.view"):
+        for ap in db.session.execute(scoped(Appointment).order_by(Appointment.starts_at.desc()).limit(LIMIT)
+                                     ).scalars():
+            d, t = _local(ap.starts_at)
+            events.append({"type": "appointment", "id": ap.id, "date": d, "time": t,
+                           "title": ap.appointment_type or ap.reason or "Appointment", "description": ap.reason,
+                           "status": ap.status, "clinic_id": ap.clinic_id, "author_name": ap.author_name,
+                           "is_walk_in": ap.is_walk_in})
     events.sort(key=lambda e: (e["date"] or "", e["time"] or "", e["id"]), reverse=True)
     names = clinic_names(p, {e["clinic_id"] for e in events} or set(dental_clinic_ids(p)))
     for e in events:

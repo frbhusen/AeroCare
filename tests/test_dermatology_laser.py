@@ -186,3 +186,16 @@ def test_laser_summary(world, client_for, app):
         s = laser_service.patient_summary(principal_for(app, a["users"]["derm_doc"]["id"]), pid)
         assert s["session_count"] == 1 and s["area_counts"]["full_legs"] == 1
         assert laser_service.patient_summary(principal_for(app, a["users"]["oph_doc"]["id"]), pid) is None
+
+
+def test_department_list_upcoming(world, client_for, app):
+    a = world["A"]
+    pid = make_patient(app, a, "Sara Upcoming")
+    d = client_for(a["users"]["derm_doc"])
+    _new(d, a, pid, LEGS, next_session_at="2099-01-01T10:00:00")
+    _new(d, a, pid, LEGS, next_session_at="2020-01-01T10:00:00")
+    r = d.get(f"{BASE}/sessions?upcoming=1&q=sara").get_json()
+    assert r["total"] == 1 and r["items"][0]["patient"]["full_name"] == "Sara Upcoming"
+    assert d.get(f"{BASE}/sessions?q=sara").get_json()["total"] == 2
+    assert client_for(a["users"]["dent_doc1"]).get(f"{BASE}/sessions").get_json()["total"] == 0
+    assert client_for(world["B"]["users"]["manager"]).get(f"{BASE}/sessions?q=sara").get_json()["total"] == 0

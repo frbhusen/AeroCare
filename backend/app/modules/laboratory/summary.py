@@ -30,8 +30,7 @@ def lab_summary(p, patient):
     return {"title": "Laboratory", "items": [
         {"id": r.id, "status": r.status, "priority": r.priority, "requested_at": iso(r.requested_at),
          "finalized_at": iso(r.finalized_at), "tests": names.get(r.id, []),
-         "abnormal_count": abnormal.get(r.id, 0) if r.status == "completed" else None,
-         "link": f"#/laboratory/requests/{r.id}"} for r in rows]}
+         "abnormal_count": abnormal.get(r.id, 0) if r.status == "completed" else None} for r in rows]}
 
 
 def register():

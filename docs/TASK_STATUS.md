@@ -3,34 +3,21 @@
 Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated summary (lead updates).
 
 ## Completed
-- Core: config, app factory, tenancy + RLS, server sessions (single session), CSRF, rate limit, error format, validation, pagination, optimistic locking helper, idempotent X-Op-Id, deletion/undo service, storage + upload validation, files service (quota, access, sharing clause), notifications, audit service, accounts (generated email, plan limits), centers (trial, modules, sequences), CLI, test harness (`tests/test_core_auth.py` 7 passing).
-
-## In Progress (parallel workstreams)
-| # | Workstream | Owns | Test DB |
-|---|---|---|---|
-| 1 | Admin + Center management (superadmin portal API, departments, clinics, staff, permissions, audit view, branding, backups, demo seed) | modules/admin, modules/center, services/backup.py, services/demo.py | test_1 |
-| 2 | Patients, visits, generic records, prescriptions API, files API, patient summary | modules/patients, modules/generic, modules/files, modules/prescriptions | test_2 |
-| 3 | Appointments (recurring, walk-ins, conflicts, WhatsApp) | modules/appointments | test_3 |
-| 4 | Billing + documents/PDF + services/pricing | modules/billing, services/pdf.py, services/documents.py | test_4 |
-| 5 | Inventory + Pharmacy | modules/inventory, modules/pharmacy | test_5 |
-| 6 | Dentistry (AeroDent port) | modules/dentistry | test_6 |
-| 7 | Dermatology + Laser, Ophthalmology | modules/dermatology, modules/ophthalmology | test_7 |
-| 8 | Laboratory + Radiology | modules/laboratory, modules/radiology | test_8 |
-| 9 | Frontend core (shell, design system, auth, router, i18n, components, offline queue) | web/ core paths | test_9 |
-
-## Blocked
-- none
+- **Core Platform**: config, app factory, tenancy + PostgreSQL RLS (`hc_app`), server sessions (single-session per user enforcement), CSRF, rate limiting, error format, validation, pagination, optimistic locking helper (`version`), idempotent `X-Op-Id`, 30s deletion/undo service, secure storage + upload validation, quota tracking, sharing clauses, notifications, immutable audit log, center lifecycle (trial, modules, sequence numbering), CLI commands.
+- **Admin & Center Management**: Superadmin portal API and frontend UI (centers, modules catalog, subscription tiers/plans, platform users, storage quotas, audit logs, system branding, backups). Center administration (departments, clinics, working hours, staff, role permissions overrides).
+- **Patients & Clinical Core**: Central patient registry with search, duplicate prevention & linking, visit management, generic clinical records (vitals, SOAP notes), shared prescriptions API & PDF printing, files & documents storage with interactive canvas annotations (pen, arrow, text) and quotas, comprehensive patient summary across departments.
+- **Appointments**: Calendar scheduling, slots, recurring appointments, walk-ins, conflict detection, WhatsApp notification links.
+- **Billing & Accounting**: Invoices, cash payments, partial payments, discounts, PDF invoice & receipt printing, service & pricing catalog, integration with clinical source records (dental treatments, pharmacy sales), financial summary provider.
+- **Inventory & Pharmacy**: Stock lots, movements, transfers, expiry tracking, department-scoped low stock reports, prescription dispensing queue, pharmacy point of sale (OTC & patient sales) creating linked billing invoices.
+- **Dentistry (AeroDent Port)**: Adult & pediatric odontograms, tooth conditions, clinical treatments, treatment plans with convert-to-treatment workflow, dental X-rays with SHA-256 verification and staged deletion, appointments integrated in dental timeline.
+- **Dermatology & Laser Hair Removal**: Interactive 2D SVG body map with 3D toggle, lesion severity & clinical photography, laser hair removal sessions with region tracking and numbering.
+- **Ophthalmology**: Structured eye examinations (OD / OS visual acuity, refraction, IOP, pupils, slit lamp, fundus, motility), glasses prescriptions with bilingual PDF generation.
+- **Laboratory & Radiology**: Laboratory test catalog, order workflow, specimen collection, result entry with abnormal flags, PDF report generation. Radiology studies, scheduling, imaging viewer, findings & impressions, report generation, explicit clinic/user sharing.
+- **Frontend Architecture & Modules**: Native ES modules (no bundler), responsive design system, dark/light themes, RTL/LTR Arabic/English internationalization, offline queue with IndexedDB and background replay. All 15 modules (`patients`, `appointments`, `billing`, `inventory`, `files`, `reports`, `admin`, `center-admin`, `dentistry`, `dermatology`, `ophthalmology`, `radiology`, `laboratory`, `pharmacy`, `generic`) fully wired with `index.js`, routes, menus, and widgets.
 
 ## Needs Verification
-- Production deployment on Linux (Nginx/Gunicorn) — config written later, not yet exercised on a Linux host.
+- Production deployment on Linux (Nginx/Gunicorn) — deployment configs present in `deploy/`, verification on Linux host pending.
 
-## Known Issues
-- none recorded
-
-## Integration backlog (from module reports)
-- Dentistry: block deleting invoiced treatments (billing hook); add appointments to dental timeline; hide files of staged-deleted X-rays during undo window; X-ray files can now set files.visit_id (composite SET NULL fixed in core).
-- Pharmacy sales → billing invoices link.
-- Inventory low-stock list only covers item/location pairs that ever had stock.
-- Production: install fonts-dejavu-core (Arabic PDFs).
-- Lab/radiology: bill requested tests (price stored per request item); stored finalize PDF is English only.
-- Billing: register a 'financial' patient summary provider gated by billing.view.
+## Known Issues / Notes
+- Arabic PDF rendering in production requires `fonts-dejavu-core` or suitable fonts installed on Linux.
+- Service worker registration in embedded verification webview requires standard Chrome/Edge browser context.

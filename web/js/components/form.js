@@ -2,6 +2,7 @@
 import { h, mount } from "../core/dom.js";
 import { t } from "../core/i18n.js";
 import { toastApiError } from "./toast.js";
+import { snippetButton } from "./snippets.js";
 
 /**
  * Field spec: {name, label, type: "text"|"email"|"tel"|"password"|"number"|"date"|"time"|"datetime"|
@@ -15,7 +16,9 @@ export function field(spec, value) {
   const common = { id, name: spec.name, disabled: spec.disabled, required: spec.required, ...(spec.attrs || {}) };
   let control;
   const type = spec.type || "text";
-  if (type === "textarea") {
+  if (type === "custom") {
+    control = typeof spec.render === "function" ? spec.render() : h("div");
+  } else if (type === "textarea") {
     control = h("textarea", { class: "textarea", ...common, placeholder: spec.placeholder, maxlength: spec.maxLength, rows: spec.rows || 4 });
     control.value = value ?? "";
   } else if (type === "select") {
@@ -38,8 +41,17 @@ export function field(spec, value) {
       inputmode: type === "money" ? "decimal" : null });
     control.value = value ?? "";
   }
+  let labelEl = null;
+  if (spec.label) {
+    const snip = type === "textarea" ? snippetButton(control, spec.name, spec.snippets) : null;
+    labelEl = snip
+      ? h("div", { class: "field-label-row" },
+        h("label", { for: id }, spec.label, spec.required ? h("span", { class: "req", "aria-hidden": "true" }, "*") : null),
+        snip)
+      : h("label", { for: id }, spec.label, spec.required ? h("span", { class: "req", "aria-hidden": "true" }, "*") : null);
+  }
   return h("div", { class: ["field", spec.span === 2 && "span-2"], dataset: { field: spec.name } },
-    spec.label ? h("label", { for: id }, spec.label, spec.required ? h("span", { class: "req", "aria-hidden": "true" }, "*") : null) : null,
+    labelEl,
     control,
     spec.help ? h("div", { class: "field-help" }, spec.help) : null);
 }
@@ -48,7 +60,7 @@ export function field(spec, value) {
 export function readValues(formEl, fields) {
   const out = {};
   for (const f of fields) {
-    if (!f.name || f.type === "section") continue;
+    if (!f.name || f.type === "section" || f.type === "custom") continue;
     const ctl = formEl.elements.namedItem(f.name);
     if (!ctl) continue;
     if (f.type === "checkbox") out[f.name] = ctl.checked;

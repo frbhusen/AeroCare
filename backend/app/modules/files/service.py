@@ -24,7 +24,7 @@ deletion.register("file", StoredFile, files=lambda f: StoredFile.id == f.id)
 
 # Categories staff may pick for ordinary patient uploads (others are set by their modules).
 UPLOAD_CATEGORIES = ("xray", "photo", "medical_image", "document", "other")
-ANNOTATION_TYPES = ("arrow", "line", "rect", "ellipse", "circle", "text", "freehand", "point", "measure")
+ANNOTATION_TYPES = ("path", "arrow", "line", "rect", "ellipse", "circle", "text", "freehand", "point", "measure")
 COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -132,6 +132,10 @@ def update(p, file_id, body):
     data = validate(body, {"version": Id(required=True), "display_name": Str(max_len=200),
                            "description": Text(max_len=2000), "category": Enum(UPLOAD_CATEGORIES)}, partial=True)
     check_version(f, data.pop("version"))
+    if "annotations" in (body or {}):
+        if not f.mime_type.startswith("image/"):
+            raise ValidationError("Only images can be annotated.", code="not_an_image")
+        f.annotations = _validate_annotations(body.get("annotations"))
     if "display_name" in data:
         f.display_name = _safe_display_name(data["display_name"], f.original_name)
     if "description" in data:
@@ -142,6 +146,17 @@ def update(p, file_id, body):
         f.category = data["category"]
     db.session.commit()
     return f
+
+
+def _num_ok(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and -1e6 < x < 1e6
+
+
+def _points_ok(pts):
+    """Flat [x1, y1, x2, y2, ...] or pairs [[x, y], ...] (the core image viewer uses normalized pairs)."""
+    if not isinstance(pts, list) or len(pts) > 4000:
+        return False
+    return all(_num_ok(x) or (isinstance(x, list) and len(x) == 2 and all(_num_ok(y) for y in x)) for x in pts)
 
 
 def _validate_annotations(raw):
@@ -156,9 +171,7 @@ def _validate_annotations(raw):
             err = "type must be one of: " + ", ".join(ANNOTATION_TYPES)
         else:
             pts = a.get("points") or []
-            if (not isinstance(pts, list) or len(pts) > 2000
-                    or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and -1e6 < x < 1e6
-                               for x in pts)):
+            if not _points_ok(pts):
                 err = "points must be a list of numbers"
             text = a.get("text")
             if text is not None and (not isinstance(text, str) or len(text) > 500):

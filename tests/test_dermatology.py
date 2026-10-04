@@ -232,3 +232,19 @@ def test_summary_provider(derm, app, client_for):
         s = service.patient_summary(principal_for(app, a["users"]["derm_doc"]["id"]), derm["pid"])
         assert s["visit_count"] == 1 and s["recent"][0]["condition"] == "Acne vulgaris"
         assert service.patient_summary(principal_for(app, a["users"]["dent_doc1"]["id"]), derm["pid"]) is None
+
+
+def test_department_list(derm, world, client_for):
+    a, doc = derm["a"], derm["doc"]
+    dept = a["departments"]["dermatology"]
+    r = doc.get(f"{BASE}/visits?department_id={dept}").get_json()
+    assert r["total"] == 1 and r["items"][0]["patient"]["full_name"] == "Ali Hassan"
+    assert r["items"][0]["patient"]["display_code"].startswith("PAT-")
+    assert doc.get(f"{BASE}/visits?q=ali").get_json()["total"] == 1
+    assert doc.get(f"{BASE}/visits?q=zzz").get_json()["total"] == 0
+    assert doc.get(f"{BASE}/visits?severity=moderate").get_json()["total"] == 1
+    assert doc.get(f"{BASE}/visits?severity=mild").get_json()["total"] == 0
+    # Other department / other center: nothing leaks.
+    assert doc.get(f"{BASE}/visits?department_id={a['departments']['dentistry']}").status_code == 404
+    assert client_for(a["users"]["dent_doc1"]).get(f"{BASE}/visits").get_json()["total"] == 0
+    assert client_for(world["B"]["users"]["manager"]).get(f"{BASE}/visits").get_json()["total"] == 0

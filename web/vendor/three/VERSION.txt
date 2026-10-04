@@ -1,0 +1,1 @@
+three.js r186 (0.186.1), build/three.module.js + three.core.js bundled & minified with esbuild into one ESM file. MIT license (LICENSE).

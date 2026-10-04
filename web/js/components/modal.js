@@ -49,9 +49,11 @@ export function openModal({ title, body, footer, actions, size = "md", drawer = 
   bodyEl, footerEl);
   const overlay = h("div", { class: ["overlay", drawer && "drawer-overlay"] }, box);
   handle.el = box;
-  overlay.addEventListener("mousedown", (e) => {
+  const onDismiss = (e) => {
     if (e.target === overlay && dismissible) close();
-  });
+  };
+  overlay.addEventListener("click", onDismiss);
+  overlay.addEventListener("touchstart", onDismiss, { passive: true });
   const onKey = (e) => {
     if (e.key === "Escape" && dismissible && [...open].pop() === handle) {
       e.stopPropagation();
@@ -63,8 +65,12 @@ export function openModal({ title, body, footer, actions, size = "md", drawer = 
   document.body.append(overlay);
   open.add(handle);
   requestAnimationFrame(() => {
-    const first = box.querySelector("[autofocus], input:not([type=hidden]):not([disabled]), select, textarea, .modal-footer .btn-primary");
-    (first || box.querySelector(".modal-header .btn")).focus();
+    const isTouch = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    let first = box.querySelector("[autofocus]");
+    if (!first && !isTouch) {
+      first = box.querySelector("input:not([type=hidden]):not([disabled]), select, textarea, .modal-footer .btn-primary");
+    }
+    (first || box.querySelector(".modal-header .btn"))?.focus();
   });
 
   let closed = false;

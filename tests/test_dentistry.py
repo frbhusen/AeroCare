@@ -314,9 +314,13 @@ def test_timeline_and_summary(dent):
     t = _treat(c, pid, create_visit=True).get_json()
     c.post(f"{BASE}/treatment-plans", json={"patient_id": pid, "procedure": "crown"})
     c.put(f"{BASE}/patients/{pid}/odontogram/permanent/14", json={"condition": "decay"})
+    r = c.post("/api/v1/appointments", json={"patient_id": pid, "starts_at": "2026-10-20T10:00",
+                                             "duration_minutes": 30, "reason": "check-up"})
+    assert r.status_code == 201, r.get_json()
     ev = c.get(f"{BASE}/patients/{pid}/timeline").get_json()["events"]
     types = {e["type"] for e in ev}
-    assert {"visit", "treatment", "treatment-plan"} <= types
+    assert {"visit", "treatment", "treatment-plan", "appointment"} <= types
+    assert dent["c"](a["users"]["derm_doc"]).get(f"{BASE}/patients/{pid}/timeline").status_code == 404
     assert any(e["type"] == "treatment" and e["id"] == t["id"] and e["tooth"] == "#14" for e in ev)
     s = c.get(f"{BASE}/patients/{pid}/summary").get_json()
     assert s["treatments_total"] == 1 and s["open_plan_items"] == 1 and s["charted_teeth"] == 1

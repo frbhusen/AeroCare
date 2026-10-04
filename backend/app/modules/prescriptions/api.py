@@ -60,3 +60,13 @@ def cancel(rx_id):
 @login_required
 def delete(rx_id):
     return jsonify(service.delete(current_principal(), rx_id)), 202
+
+
+@bp.get("/<int:rx_id>/pdf")
+@login_required
+def pdf(rx_id):
+    from backend.app.services import documents
+    from .printing import prescription_pdf
+    rx = service.get_rx(current_principal(), rx_id)
+    lang = "ar" if request.args.get("lang") == "ar" else "en"
+    return documents.pdf_response(prescription_pdf(rx, lang), f"prescription-{rx.id}.pdf")

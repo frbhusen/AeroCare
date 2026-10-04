@@ -19,10 +19,13 @@ def _page(stmt, serialize):
     return {"items": [serialize(r) for r in rows], "page": page, "per_page": per_page, "total": total}
 
 
-def _loc_filter(p, location_id):
-    """Visible location ids (optionally a single one; 404 if not visible)."""
-    ids = set(db.session.execute(select(InventoryLocation.id).where(p.tenant(InventoryLocation),
-                                                                    location_clause(p))).scalars())
+def _loc_filter(p, location_id, department_id=None):
+    """Visible location ids (optionally a single one; 404 if not visible), optionally limited to
+    one department's clinics + pool (department environment pages)."""
+    stmt = select(InventoryLocation.id).where(p.tenant(InventoryLocation), location_clause(p))
+    if department_id:
+        stmt = stmt.where(InventoryLocation.department_id == department_id)
+    ids = set(db.session.execute(stmt).scalars())
     if location_id:
         if location_id not in ids:
             raise NotFound("Location not found")
@@ -69,29 +72,30 @@ def _stock_row(r):
             "low": th is not None and qty <= th}
 
 
-def stock_levels(p, location_id=None, item_id=None, q=None, category=None, is_medication=None, include_zero=False):
-    stmt, qty = _stock_stmt(p, _loc_filter(p, location_id), item_id, q, category, is_medication)
+def stock_levels(p, location_id=None, item_id=None, q=None, category=None, is_medication=None, include_zero=False,
+                 department_id=None):
+    stmt, qty = _stock_stmt(p, _loc_filter(p, location_id, department_id), item_id, q, category, is_medication)
     if not include_zero:
         stmt = stmt.having(qty > 0)
     return _page(stmt.order_by(InventoryItem.name, StockLot.location_id), _stock_row)
 
 
-def low_stock(p, location_id=None):
+def low_stock(p, location_id=None, department_id=None):
     """(item, location) pairs at or below the item's threshold, among locations that stock the item."""
-    stmt, qty = _stock_stmt(p, _loc_filter(p, location_id))
+    stmt, qty = _stock_stmt(p, _loc_filter(p, location_id, department_id))
     stmt = stmt.where(InventoryItem.low_stock_threshold.is_not(None), InventoryItem.is_active.is_(True)).having(
         qty <= func.max(InventoryItem.low_stock_threshold))
     return _page(stmt.order_by(InventoryItem.name, StockLot.location_id), _stock_row)
 
 
-def expiry_report(p, days=30, location_id=None, item_id=None, is_medication=None):
+def expiry_report(p, days=30, location_id=None, item_id=None, is_medication=None, department_id=None):
     today = local_today()
     limit = today + timedelta(days=days)
     stmt = (select(StockLot, InventoryItem)
             .join(InventoryItem, and_(InventoryItem.id == StockLot.item_id,
                                       InventoryItem.health_center_id == StockLot.health_center_id))
             .where(p.tenant(StockLot), InventoryItem.live(), item_clause(p),
-                   StockLot.location_id.in_(_loc_filter(p, location_id)), StockLot.quantity > 0,
+                   StockLot.location_id.in_(_loc_filter(p, location_id, department_id)), StockLot.quantity > 0,
                    StockLot.expiry_date.is_not(None), StockLot.expiry_date <= limit))
     if item_id:
         stmt = stmt.where(StockLot.item_id == item_id)
@@ -120,7 +124,7 @@ def movements(p, f):
             .join(InventoryItem, and_(InventoryItem.id == StockMovement.item_id,
                                       InventoryItem.health_center_id == StockMovement.health_center_id))
             .where(p.tenant(StockMovement), item_clause(p),
-                   StockMovement.location_id.in_(_loc_filter(p, f.get("location_id")))))
+                   StockMovement.location_id.in_(_loc_filter(p, f.get("location_id"), f.get("department_id")))))
     if f.get("item_id"):
         stmt = stmt.where(StockMovement.item_id == f["item_id"])
     if f.get("type"):
@@ -137,8 +141,10 @@ def movements(p, f):
                  lambda r: movement_json(r[0], r[1]))
 
 
-def _transfer_clause(p):
+def _transfer_clause(p, department_id=None):
     vis = select(InventoryLocation.id).where(p.tenant(InventoryLocation), location_clause(p))
+    if department_id:
+        vis = vis.where(InventoryLocation.department_id == department_id)
     return or_(StockTransfer.from_location_id.in_(vis), StockTransfer.to_location_id.in_(vis))
 
 
@@ -161,8 +167,8 @@ def transfer_json(p, tr, with_items=False):
     return out
 
 
-def list_transfers(p, location_id=None):
-    stmt = select(StockTransfer).where(p.tenant(StockTransfer), _transfer_clause(p))
+def list_transfers(p, location_id=None, department_id=None):
+    stmt = select(StockTransfer).where(p.tenant(StockTransfer), _transfer_clause(p, department_id))
     if location_id:
         stmt = stmt.where(or_(StockTransfer.from_location_id == location_id,
                               StockTransfer.to_location_id == location_id))

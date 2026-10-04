@@ -180,3 +180,43 @@ def test_sales_catalog_and_expiry(app, world, client_for):
     assert [(e["lot_code"], e["status"]) for e in exp] == [("SOON", "expiring")]
     m = ph.get(f"{PH}/meta").get_json()
     assert m["clinics"][0]["id"] == a["clinics"]["pharm1"] and m["clinics"][0]["location_id"] == loc
+
+
+def test_sale_creates_billing_invoice(app, world, client_for):
+    from backend.app.core import tenancy
+    from backend.app.extensions import db
+    from backend.app.models import Patient
+    from backend.app.services.centers import next_sequence
+    from backend.app.services.clinical import link_patient_to_clinic
+    a = world["A"]
+    ph, loc, amox, para = setup_pharmacy(world, client_for)
+    cid = a["center_id"]
+    with app.app_context(), tenancy.scoped("tenant", cid):
+        pt = Patient(health_center_id=cid, code=next_sequence(cid, "patient_seq"), full_name="Buyer",
+                     search_name="buyer")
+        db.session.add(pt)
+        db.session.flush()
+        link_patient_to_clinic(cid, pt.id, a["clinics"]["pharm1"])
+        db.session.commit()
+        pid = pt.id
+    # invoice needs a patient
+    r = ph.post(f"{PH}/sales", json={"create_invoice": True,
+                                     "items": [{"inventory_item_id": para["id"], "quantity": 1}]})
+    assert r.status_code == 422 and level(ph, loc, para["id"]) == "20"
+    r = ph.post(f"{PH}/sales", json={"create_invoice": True, "patient_id": pid, "paid_amount": "2.00",
+                                     "items": [{"inventory_item_id": para["id"], "quantity": 4}]})
+    assert r.status_code == 201, r.get_json()
+    s = r.get_json()
+    assert s["invoice_id"] and s["total"] == "4.00"
+    inv = ph.get(f"/api/v1/billing/invoices/{s['invoice_id']}").get_json()
+    assert inv["total"] == "4.00" and inv["paid_total"] == "2.00" and inv["status"] == "partially_paid"
+    assert inv["items"][0]["reference_type"] == "pharmacy_sale" and inv["items"][0]["kind"] == "medicine"
+    # patient not visible to the pharmacy -> 404, nothing sold
+    with app.app_context(), tenancy.scoped("tenant", cid):
+        other = Patient(health_center_id=cid, code=next_sequence(cid, "patient_seq"), full_name="Hidden",
+                        search_name="hidden")
+        db.session.add(other)
+        db.session.commit()
+        oid = other.id
+    r = ph.post(f"{PH}/sales", json={"patient_id": oid, "items": [{"inventory_item_id": para["id"], "quantity": 1}]})
+    assert r.status_code == 404 and level(ph, loc, para["id"]) == "16"

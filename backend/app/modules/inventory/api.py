@@ -40,9 +40,9 @@ def meta():
 def list_items():
     p = current_principal()
     f = query_args({"q": Str(max_len=100), "category": Str(max_len=100), "is_medication": Bool(),
-                    "department_id": Id(), "active": Bool()})
+                    "department_id": Id(), "active": Bool(), "include_center": Bool()})
     stmt = service.list_items_stmt(p, f.get("q"), f.get("category"), f.get("is_medication"), f.get("department_id"),
-                                   f.get("active"))
+                                   f.get("active"), bool(f.get("include_center")))
     return jsonify(paginate(db.session, stmt, service.item_json, default_per_page=50))
 
 
@@ -101,9 +101,10 @@ def locations():
 @login_required(perm="inventory.view")
 def stock_levels():
     f = query_args({"location_id": Id(), "item_id": Id(), "q": Str(max_len=100), "category": Str(max_len=100),
-                    "is_medication": Bool(), "include_zero": Bool()})
+                    "is_medication": Bool(), "include_zero": Bool(), "department_id": Id()})
     return jsonify(reports.stock_levels(current_principal(), f.get("location_id"), f.get("item_id"), f.get("q"),
-                                        f.get("category"), f.get("is_medication"), bool(f.get("include_zero"))))
+                                        f.get("category"), f.get("is_medication"), bool(f.get("include_zero")),
+                                        f.get("department_id")))
 
 
 @bp.get("/lots")
@@ -169,8 +170,8 @@ def create_transfer():
 @bp.get("/transfers")
 @login_required(perm="inventory.view")
 def list_transfers():
-    f = query_args({"location_id": Id()})
-    return jsonify(reports.list_transfers(current_principal(), f.get("location_id")))
+    f = query_args({"location_id": Id(), "department_id": Id()})
+    return jsonify(reports.list_transfers(current_principal(), f.get("location_id"), f.get("department_id")))
 
 
 @bp.get("/transfers/<int:transfer_id>")
@@ -183,22 +184,23 @@ def get_transfer(transfer_id):
 @login_required(perm="inventory.view")
 def movements():
     f = query_args({"location_id": Id(), "item_id": Id(), "type": Enum(MOVEMENT_TYPES),
-                    "reference_type": Str(max_len=40), "reference_id": Id(), "date_from": Date(), "date_to": Date()})
+                    "reference_type": Str(max_len=40), "reference_id": Id(), "date_from": Date(), "date_to": Date(),
+                    "department_id": Id()})
     return jsonify(reports.movements(current_principal(), f))
 
 
 @bp.get("/low-stock")
 @login_required(perm="inventory.view")
 def low_stock():
-    f = query_args({"location_id": Id()})
-    return jsonify(reports.low_stock(current_principal(), f.get("location_id")))
+    f = query_args({"location_id": Id(), "department_id": Id()})
+    return jsonify(reports.low_stock(current_principal(), f.get("location_id"), f.get("department_id")))
 
 
 @bp.get("/expiry")
 @login_required(perm="inventory.view")
 def expiry():
     f = query_args({"days": Int(min_value=0, max_value=3650), "location_id": Id(), "item_id": Id(),
-                    "is_medication": Bool()})
+                    "is_medication": Bool(), "department_id": Id()})
     days = f.get("days")
     return jsonify(reports.expiry_report(current_principal(), 30 if days is None else days, f.get("location_id"),
-                                         f.get("item_id"), f.get("is_medication")))
+                                         f.get("item_id"), f.get("is_medication"), f.get("department_id")))

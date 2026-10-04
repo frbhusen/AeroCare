@@ -187,3 +187,18 @@ def test_patient_purge_removes_file_bytes(app, world, client_for):
     with app.app_context():
         assert not get_storage().exists(key)
     assert platform_exec(app, lambda db: db.session.get(StoredFile, f["id"])) is None
+
+
+def test_patch_accepts_viewer_annotations(app, world, client_for):
+    a, pt = _setup(world, client_for)
+    doc = client_for(a["users"]["dent_doc1"])
+    f = upload(doc, pt, a["clinics"]["dent1"])["items"][0]
+    ann = [{"type": "path", "points": [[0.1, 0.2], [0.3, 0.4]], "color": "#ef4444"},
+           {"type": "text", "points": [[0.5, 0.5]], "text": "note", "color": "#00ff00"}]
+    r = doc.patch(f"/api/v1/files/{f['id']}", json={"version": 1, "annotations": ann})
+    assert r.status_code == 200 and r.get_json()["annotations"] == ann and r.get_json()["version"] == 2
+    assert doc.patch(f"/api/v1/files/{f['id']}", json={"version": 2,
+                                                       "annotations": [{"type": "path", "points": [["x"]]}]}
+                     ).status_code == 422
+    pdf = upload(doc, pt, a["clinics"]["dent1"], files=[(PDF, "a.pdf")])["items"][0]
+    assert doc.patch(f"/api/v1/files/{pdf['id']}", json={"version": 1, "annotations": []}).status_code == 422

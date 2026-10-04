@@ -67,7 +67,8 @@ def get_item(p, item_id, lock=False):
     return item
 
 
-def list_items_stmt(p, q=None, category=None, is_medication=None, department_id=None, active=None):
+def list_items_stmt(p, q=None, category=None, is_medication=None, department_id=None, active=None,
+                    include_center=False):
     stmt = select(InventoryItem).where(p.tenant(InventoryItem), InventoryItem.live(), item_clause(p))
     if q:
         like = f"%{q.lower()}%"
@@ -78,7 +79,8 @@ def list_items_stmt(p, q=None, category=None, is_medication=None, department_id=
     if is_medication is not None:
         stmt = stmt.where(InventoryItem.is_medication.is_(is_medication))
     if department_id:
-        stmt = stmt.where(InventoryItem.department_id == department_id)
+        own = InventoryItem.department_id == department_id
+        stmt = stmt.where(or_(own, InventoryItem.department_id.is_(None)) if include_center else own)
     if active is not None:
         stmt = stmt.where(InventoryItem.is_active.is_(active))
     return stmt.order_by(InventoryItem.name, InventoryItem.id)

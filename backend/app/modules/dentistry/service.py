@@ -282,6 +282,7 @@ def clinic_doctors(p, clinic_id=None):
 def dental_summary(p, patient):
     """Dental section of the patient summary, built only from clinics the principal can access.
     Returns None when the principal has no dental clinic or lacks medical_records.view."""
+    from backend.app.models import StoredFile
     from .models import Treatment, TreatmentPlan, XRay
     ids = dental_clinic_ids(p)
     if not ids or not p.has("medical_records.view"):
@@ -296,7 +297,9 @@ def dental_summary(p, patient):
     open_plans = db.session.execute(select(func.count()).select_from(TreatmentPlan).where(
         *scoped(TreatmentPlan), TreatmentPlan.live(),
         TreatmentPlan.status.notin_(("completed", "cancelled")))).scalar_one()
-    xrays = db.session.execute(select(func.count()).select_from(XRay).where(*scoped(XRay), XRay.live())
+    xrays = db.session.execute(select(func.count()).select_from(XRay).join(
+        StoredFile, (StoredFile.id == XRay.file_id) & (StoredFile.health_center_id == XRay.health_center_id))
+        .where(*scoped(XRay), XRay.live(), StoredFile.live())
                                ).scalar_one()
     charted = db.session.execute(select(func.count()).select_from(OdontogramTooth).where(
         *scoped(OdontogramTooth), OdontogramTooth.condition.isnot(None),
