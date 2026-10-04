@@ -43,31 +43,31 @@ async function deleteOrDeactivate(url, obj, label, reload) {
 const activePill = (on) => h("span", { class: `pill pill--${on ? "active" : "archived"}` }, t(on ? "admin.ui.active" : "admin.ui.inactive"));
 
 // ---------------------------------------------------------------- departments (center level)
-export async function departmentsTab(el) {
+export async function departmentsTab(el, { centerLevel = true } = {}) {
   mount(el, loadingState());
   let list;
   let meta;
   try {
     [list, meta] = await Promise.all([api.get("/center/departments"), api.get("/center/departments/meta")]);
   } catch (e) {
-    return mount(el, errorState(e, () => departmentsTab(el)));
+    return mount(el, errorState(e, () => departmentsTab(el, { centerLevel })));
   }
-  const reload = () => departmentsTab(el);
+  const reload = () => departmentsTab(el, { centerLevel });
   const available = meta.types.filter((x) => x.available);
-  const add = can("settings.edit") && available.length ? h("button", { class: "btn btn-primary", type: "button",
+  const add = centerLevel && can("settings.edit") && available.length ? h("button", { class: "btn btn-primary", type: "button",
     onClick: () => addDepartment(available, reload) }, icon("plus"), t("center-admin.dept.add")) : null;
   const L = meta.limits;
   mount(el, h("div", { class: "stack" },
-    h("div", { class: "card card-body grid-3" },
+    !centerLevel ? null : h("div", { class: "card card-body grid-3" },
       h("div", h("div", { class: "text-sm" }, t("admin.limit.max_departments")), usageBar(L.used_departments, L.max_departments)),
       h("div", h("div", { class: "text-sm" }, t("admin.limit.max_clinics")), usageBar(L.used_clinics, L.max_clinics)),
       h("div", h("div", { class: "text-sm" }, t("admin.limit.max_head_doctors")), usageBar(L.used_head_doctors, L.max_head_doctors))),
     h("div", { class: "row-between" }, h("p", { class: "text-muted" }, t("center-admin.dept.help")), add),
-    list.items.length ? h("div", { class: "dept-grid" }, list.items.map((d) => deptCard(d, reload)))
+    list.items.length ? h("div", { class: "dept-grid" }, list.items.map((d) => deptCard(d, reload, centerLevel)))
       : emptyState({ icon: "building", title: t("center-admin.dept.none"), message: t("center-admin.dept.none_help") })));
 }
 
-function deptCard(d, reload) {
+function deptCard(d, reload, centerLevel = true) {
   return h("div", { class: "card card-body stack", style: { borderInlineStart: `4px solid ${safeColor(d.color) || "var(--line)"}` } },
     h("div", { class: "row-between" },
       h("div", { class: "row" }, h("span", { class: "adm-swatch", style: { background: safeColor(d.color) || "var(--neutral)" } }, icon(d.type.icon || "stethoscope")),
@@ -79,9 +79,9 @@ function deptCard(d, reload) {
       h("dt", t("center-admin.dept.clinics")), h("dd", formatNumber(d.clinic_count)),
       h("dt", t("center-admin.dept.duration")), h("dd", d.settings?.[DUR] ? t("center-admin.minutes", { n: d.settings[DUR] }) : "—")),
     d.can_manage && can("settings.edit") ? h("div", { class: "row" },
-      btn(t("admin.ui.edit"), () => editDepartment(d, reload, true), { small: true, iconName: "edit" }),
-      can("staff.edit") ? btn(t("center-admin.dept.set_head"), () => setHead(d, reload), { small: true, iconName: "shield" }) : null,
-      btn(t("admin.ui.delete"), () => deleteOrDeactivate(`/center/departments/${d.id}`, d, d.name, reload), { small: true, variant: "ghost", iconName: "trash" }))
+      btn(t("admin.ui.edit"), () => editDepartment(d, reload, centerLevel), { small: true, iconName: "edit" }),
+      centerLevel && can("staff.edit") ? btn(t("center-admin.dept.set_head"), () => setHead(d, reload), { small: true, iconName: "shield" }) : null,
+      centerLevel ? btn(t("admin.ui.delete"), () => deleteOrDeactivate(`/center/departments/${d.id}`, d, d.name, reload), { small: true, variant: "ghost", iconName: "trash" }) : null)
       : null);
 }
 

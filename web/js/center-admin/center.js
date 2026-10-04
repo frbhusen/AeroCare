@@ -8,6 +8,7 @@ import {
 export const centerDict = {
   en: {
     "center-admin.center.tab": "Center",
+    "center-admin.dept_settings.title": "Department settings",
     "center-admin.center.general": "General & branding",
     "center-admin.center.name": "Health center name",
     "center-admin.center.currency": "Currency",
@@ -46,6 +47,7 @@ export const centerDict = {
   },
   ar: {
     "center-admin.center.tab": "المركز",
+    "center-admin.dept_settings.title": "إعدادات القسم",
     "center-admin.center.general": "عام والهوية البصرية",
     "center-admin.center.name": "اسم المركز الصحي",
     "center-admin.center.currency": "العملة",
