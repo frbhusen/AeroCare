@@ -4,9 +4,11 @@ import { dict } from "./i18n.js";
 import { renderStaff } from "./staff.js";
 import { departmentsTab, clinicsTab } from "./org.js";
 import { rolePermissionsTab } from "./perms.js";
+import { centerDict, centerTab, auditTab, backupTab } from "./center.js";
 
 export function register(registry) {
   registry.i18n(dict);
+  registry.i18n(centerDict);
 
   // Staff route & menu
   registry.route({
@@ -67,7 +69,9 @@ export function register(registry) {
 
 function renderOrganization(ctx) {
   ctx.setTitle(t("center-admin.org.title"));
+  const centerLevel = ctx.area === "center";
   const tabList = [
+    centerLevel ? { key: "center", label: t("center-admin.center.tab"), render: (el) => centerTab(el) } : null,
     {
       key: "departments",
       label: t("center-admin.org.tab.departments"),
@@ -83,6 +87,8 @@ function renderOrganization(ctx) {
       label: t("center-admin.org.tab.permissions"),
       render: (el) => rolePermissionsTab(el),
     } : null,
+    can("audit.view") ? { key: "audit", label: t("center-admin.audit.tab"), render: (el) => auditTab(el) } : null,
+    centerLevel && can("backup.create") ? { key: "backup", label: t("center-admin.backup.tab"), render: (el) => backupTab(el) } : null,
   ].filter(Boolean);
 
   const tb = tabs(tabList);
