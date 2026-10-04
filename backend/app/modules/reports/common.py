@@ -30,7 +30,10 @@ LABELS = {
     "gender": ("Gender", "الجنس"), "status": ("Status", "الحالة"), "none": ("All", "الكل"),
     "service": ("Service", "الخدمة"), "kind": ("Type", "النوع"), "procedure": ("Procedure", "الإجراء"),
     "test": ("Test", "التحليل"), "exam_type": ("Exam type", "نوع الفحص"), "patient": ("Patient", "المريض"),
-    "item": ("Item", "المادة"), "location": ("Location", "الموقع"),
+    "item": ("Item", "المادة"), "location": ("Location", "الموقع"), "cashier": ("Cashier", "أمين الصندوق"),
+    "payment_count": ("Payments", "الدفعات"), "payments_cash": ("Payments cash", "نقد الدفعات"),
+    "sale_count": ("Pharmacy sales", "مبيعات الصيدلية"), "sales_cash": ("Sales cash", "نقد المبيعات"),
+    "total_cash": ("Total cash", "إجمالي النقد"), "voided_count": ("Voided payments", "دفعات ملغاة"),
     # metrics
     "new_patients": ("New patients", "مرضى جدد"), "total": ("Total", "الإجمالي"),
     "scheduled": ("Scheduled", "مجدول"), "arrived": ("Arrived", "حضر"), "in_progress": ("In progress", "قيد التنفيذ"),
