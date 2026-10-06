@@ -37,7 +37,7 @@ Details:
 
 ## 2. Restoring on a fresh Linux server
 
-Assumes the target follows `docs/DEPLOYMENT.md` sections 1-3 (packages, roles, app checkout, venv, env file). **Do not run `init-schema` before the restore.**
+Assumes the target follows `docs/DEPLOYMENT.md` sections 1-5 (packages, database roles, system user, code + venv, env file). **Do not run `init-schema` before the restore.**
 
 1. **Stop the application** (if it is running): `systemctl stop aerocare`.
 2. **Create roles + empty database** (as `postgres`). Use the same role names as the source:
