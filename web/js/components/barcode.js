@@ -2,7 +2,7 @@
 // Also provides Code 128 barcode SVG rendering and printable patient card.
 import { h } from "../core/dom.js";
 import { t } from "../core/i18n.js";
-import { formatDate, ageFrom } from "../core/format.js";
+import { formatDate, ageFrom } from "../core/i18n.js";
 import { getCenter } from "../core/state.js";
 import { openModal } from "./modal.js";
 import { printElement } from "./print.js";

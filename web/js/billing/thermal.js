@@ -1,7 +1,7 @@
 // 80mm Thermal Receipt Printing (POS / Cashier)
 import { h } from "../core/dom.js";
 import { t } from "../core/i18n.js";
-import { formatDateTime, formatMoney } from "../core/format.js";
+import { formatDateTime, formatMoney } from "../core/i18n.js";
 import { getCenter } from "../core/state.js";
 import { printElement } from "../components/print.js";
 import { renderBarcodeSVG } from "../components/barcode.js";

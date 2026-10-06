@@ -2,7 +2,7 @@
 // Uses native browser Web Speech API (SpeechRecognition / webkitSpeechRecognition).
 import { h } from "../core/dom.js";
 import { t } from "../core/i18n.js";
-import { toast } from "./modal.js";
+import { toast } from "./toast.js";
 import { icon } from "./icons.js";
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
