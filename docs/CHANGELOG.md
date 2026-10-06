@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-06
+- Renamed the product to **AeroCare** (UI name/title, Arabic "أيروكير", PWA manifest, login branding default, PDF metadata, thermal receipt footer, docs, deploy files/paths renamed to `aerocare`).
+
 ## 2026-10-04 (review of Antigravity session)
 - Fixed: General Medicine visit form sent clinical fields flat, so records were saved empty; screens rebuilt (create/edit/complete/delete, vitals, prescriptions, files, lab/radiology panel).
 - Fixed: files panel uploaded with an invalid category (every upload rejected); added clinic/category picker, rename, explicit sharing dialog, storage usage.

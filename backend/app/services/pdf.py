@@ -285,7 +285,7 @@ def render_document(center, department=None, kind="document", title="", sections
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=size, leftMargin=margin, rightMargin=margin, topMargin=12 * mm,
                             bottomMargin=20 * mm, title=visual(title or ""), author=visual(_get(center, "name", "")),
-                            creator="Health Center Platform")
+                            creator="AeroCare")
     doc.build(story, canvasmaker=_numbered_canvas(footer))
     return buf.getvalue()
 

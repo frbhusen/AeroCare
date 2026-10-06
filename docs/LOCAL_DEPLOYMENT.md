@@ -1,6 +1,6 @@
 # Local Deployment & Development Guide
 
-This guide covers running the Health Center Management Platform locally for development, testing, and offline evaluation.
+This guide covers running AeroCare (the Health Center Management Platform) locally for development, testing, and offline evaluation.
 
 ---
 

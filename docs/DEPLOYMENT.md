@@ -1,7 +1,7 @@
 # Deployment (dedicated Linux server)
 
 Internet → Nginx (TLS, static `web/`) → Gunicorn (`backend.wsgi:app`) → Flask → PostgreSQL + secure file storage.
-Files: `deploy/nginx/healthcenter.conf`, `deploy/gunicorn.conf.py`, `deploy/systemd/healthcenter.service`, `deploy/healthcenter.env.example`. Backups/restore: `docs/OPERATIONS.md`. Local setup: `docs/LOCAL_DEPLOYMENT.md`.
+Files: `deploy/nginx/aerocare.conf`, `deploy/gunicorn.conf.py`, `deploy/systemd/aerocare.service`, `deploy/aerocare.env.example`. Backups/restore: `docs/OPERATIONS.md`. Local setup: `docs/LOCAL_DEPLOYMENT.md`.
 
 ## 1. Packages (Debian/Ubuntu)
 ```
@@ -14,27 +14,27 @@ PostgreSQL 15+ required (RLS FORCE, `pg_trgm`, `btree_gist`).
 -- as postgres
 CREATE ROLE hc_schema LOGIN PASSWORD '...' NOSUPERUSER NOBYPASSRLS;
 CREATE ROLE hc_app    LOGIN PASSWORD '...' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
-CREATE DATABASE healthcenter OWNER hc_schema;
-\c healthcenter
+CREATE DATABASE aerocare OWNER hc_schema;
+\c aerocare
 CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS btree_gist;
 ```
 The app connects as `hc_app` (never superuser, never table owner) so Row Level Security always applies.
 
 ## 3. Application
 ```
-useradd --system --home /opt/healthcenter healthcenter
-mkdir -p /opt/healthcenter /var/lib/healthcenter/{storage,backups} /var/log/healthcenter /etc/healthcenter
-# copy the repository to /opt/healthcenter/app
-python3 -m venv /opt/healthcenter/venv
-/opt/healthcenter/venv/bin/pip install -r /opt/healthcenter/app/requirements.lock.txt
-cp deploy/healthcenter.env.example /etc/healthcenter/healthcenter.env   # fill secrets; chmod 600
-chown -R healthcenter: /var/lib/healthcenter /var/log/healthcenter
-chmod 700 /var/lib/healthcenter/storage
+useradd --system --home /opt/aerocare aerocare
+mkdir -p /opt/aerocare /var/lib/aerocare/{storage,backups} /var/log/aerocare /etc/aerocare
+# copy the repository to /opt/aerocare/app
+python3 -m venv /opt/aerocare/venv
+/opt/aerocare/venv/bin/pip install -r /opt/aerocare/app/requirements.lock.txt
+cp deploy/aerocare.env.example /etc/aerocare/aerocare.env   # fill secrets; chmod 600
+chown -R aerocare: /var/lib/aerocare /var/log/aerocare
+chmod 700 /var/lib/aerocare/storage
 ```
 Schema + first Superadmin (as the app user, with the env file loaded):
 ```
-set -a; . /etc/healthcenter/healthcenter.env; set +a
-cd /opt/healthcenter/app
+set -a; . /etc/aerocare/aerocare.env; set +a
+cd /opt/aerocare/app
 venv/bin/flask --app backend.wsgi db init-schema
 venv/bin/flask --app backend.wsgi admin create-superadmin --username owner --name "Platform Owner"
 ```
@@ -42,17 +42,17 @@ venv/bin/flask --app backend.wsgi admin create-superadmin --username owner --nam
 
 ## 4. Services
 ```
-cp deploy/systemd/healthcenter.service /etc/systemd/system/ && systemctl daemon-reload
-systemctl enable --now healthcenter
-cp deploy/nginx/healthcenter.conf /etc/nginx/sites-available/healthcenter   # set server_name + cert paths
-ln -s /etc/nginx/sites-available/healthcenter /etc/nginx/sites-enabled/ && nginx -t && systemctl reload nginx
+cp deploy/systemd/aerocare.service /etc/systemd/system/ && systemctl daemon-reload
+systemctl enable --now aerocare
+cp deploy/nginx/aerocare.conf /etc/nginx/sites-available/aerocare   # set server_name + cert paths
+ln -s /etc/nginx/sites-available/aerocare /etc/nginx/sites-enabled/ && nginx -t && systemctl reload nginx
 certbot --nginx -d your.domain
 ```
 
 ## 5. Checks
 - `curl https://your.domain/api/v1/health` → `{"status":"ok"}`
 - Login works; cookies are `Secure; HttpOnly; SameSite=Lax`.
-- `journalctl -u healthcenter` and `/var/log/healthcenter/app.log` contain no request bodies / medical content.
+- `journalctl -u aerocare` and `/var/log/aerocare/app.log` contain no request bodies / medical content.
 - Firewall: only 80/443 (and SSH) open; PostgreSQL listens on localhost only.
 
 ## Notes

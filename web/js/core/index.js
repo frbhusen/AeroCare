@@ -23,4 +23,7 @@ export { patientSearch, patientName } from "../components/patient-search.js";
 export { createUploader, MAX_FILE_BYTES } from "../components/uploader.js";
 export { openImageViewer, openFileViewer } from "../components/image-viewer.js";
 export { printPdf, printView, printElement, printButton } from "../components/print.js";
-export { listenBarcode } from "../components/barcode.js";
+export { listenBarcode, renderBarcodeSVG, openPatientCard } from "../components/barcode.js";
+export { dictateButton } from "../components/dictate.js";
+
+

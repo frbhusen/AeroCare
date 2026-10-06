@@ -1,14 +1,17 @@
 // Patient profile: header, departments-with-records indicator, general info (edit), visits timeline,
 // prescriptions, files, + tabs registered by other modules (hooks.js).
 import { api, h, t, mount, icon, can, toast, createForm, openModal, confirmDialog, deleteWithUndo, tabs,
-  navigate, areaHref, formatDateTime, loadingState, errorState, offlineCopyBanner } from "../core/index.js";
+  navigate, areaHref, formatDateTime, loadingState, errorState, offlineCopyBanner, openPatientCard } from "../core/index.js";
 import { conflictOr } from "./util.js";
 import { patientHeader, patientHref } from "./header.js";
 import { loadMeta, profileFields } from "./meta.js";
 import { patientTabsFor } from "./hooks.js";
 import { visitsTimeline } from "./visits.js";
+import { vitalsCard } from "./vitals.js";
 import { prescriptionsPanel } from "./prescriptions.js";
+import { referralsPanel } from "./referrals.js";
 import { filesPanel } from "../files/panel.js";
+
 
 export async function renderPatientProfile(ctx) {
   const id = ctx.params.id;
@@ -30,6 +33,7 @@ export async function renderPatientProfile(ctx) {
   function render(activeTab) {
     const actions = [
       h("a", { class: "btn", href: patientHref(ctx, patient.id, "summary") }, icon("clipboard"), t("patients.summary.open")),
+      h("button", { class: "btn", type: "button", onClick: () => openPatientCard(patient) }, icon("barcode"), t("patients.id_card")),
       can("patients.edit") ? h("button", { class: "btn", type: "button", onClick: openEdit }, icon("edit"), t("core.edit")) : null,
       can("patients.delete") ? h("button", { class: "btn btn-ghost", type: "button", "aria-label": t("core.delete"),
         title: t("core.delete"), onClick: remove }, icon("trash")) : null,
@@ -42,9 +46,12 @@ export async function renderPatientProfile(ctx) {
         render: (el) => tb.render(el, { patient, ctx, reload: () => load(tb.key) }) })),
       can("medical_records.view") ? { key: "prescriptions", label: t("patients.tab.prescriptions"),
         render: (el) => mount(el, prescriptionsPanel({ ctx, patient })) } : null,
+      can("medical_records.view") ? { key: "referrals", label: t("patients.referrals.title"),
+        render: (el) => mount(el, referralsPanel({ ctx, patient })) } : null,
       can("files.view") ? { key: "files", label: t("patients.tab.files"),
         render: (el) => mount(el, filesPanel({ ctx, patient })) } : null,
     ].filter(Boolean);
+
     const tabKey = items.some((x) => x.key === (activeTab || ctx.query.tab)) ? (activeTab || ctx.query.tab) : undefined;
     mount(root,
       h("div", { class: "page-header no-print" },
@@ -58,15 +65,17 @@ export async function renderPatientProfile(ctx) {
   function overview() {
     const p = patient;
     const row = (k, v, cls) => [h("dt", t(`patients.field.${k}`)), h("dd", { class: cls }, v || h("span", { class: "text-muted" }, "—"))];
-    return h("div", { class: "grid-2" },
-      h("section", { class: "card" }, h("div", { class: "card-header" }, h("h2", t("patients.general_info"))),
-        h("div", { class: "card-body" }, h("dl", { class: "kv" },
-          row("full_name", p.full_name), row("phone", p.phone, "ltr"), row("address", p.address),
-          row("blood_type", p.blood_type, "ltr"), row("allergies", p.allergies), row("chronic_conditions", p.chronic_conditions),
-          row("medications", p.medications), row("general_notes", p.general_notes),
-          row("created_at", formatDateTime(p.created_at))))),
-      h("section", { class: "card" }, h("div", { class: "card-header" }, h("h2", t("patients.departments.title"))),
-        h("div", { class: "card-body" }, departmentsDetail(p.departments))));
+    return h("div", { class: "stack gap-md" },
+      can("medical_records.view") ? vitalsCard({ ctx, patient, onUpdated: () => load("overview") }) : null,
+      h("div", { class: "grid-2" },
+        h("section", { class: "card" }, h("div", { class: "card-header" }, h("h2", t("patients.general_info"))),
+          h("div", { class: "card-body" }, h("dl", { class: "kv" },
+            row("full_name", p.full_name), row("phone", p.phone, "ltr"), row("address", p.address),
+            row("blood_type", p.blood_type, "ltr"), row("allergies", p.allergies), row("chronic_conditions", p.chronic_conditions),
+            row("medications", p.medications), row("general_notes", p.general_notes),
+            row("created_at", formatDateTime(p.created_at))))),
+        h("section", { class: "card" }, h("div", { class: "card-header" }, h("h2", t("patients.departments.title"))),
+          h("div", { class: "card-body" }, departmentsDetail(p.departments)))));
   }
 
   async function openEdit() {

@@ -146,3 +146,71 @@ class PrescriptionItem(db.Model, TenantMixin):
     quantity = Column(Numeric(12, 2))
     dispensed_quantity = Column(Numeric(12, 2), nullable=False, default=0)
     sort_order = Column(Integer, nullable=False, default=0)
+
+
+class PatientVital(db.Model, TenantMixin, TimestampMixin, VersionMixin, UndoDeleteMixin, AuthorSnapshotMixin):
+    """Patient vital signs record (BP, HR, Temp, RR, SpO2, Weight, Height, BMI)."""
+    __tablename__ = "patient_vitals"
+    __table_args__ = (
+        tenant_unique("patient_vitals"),
+        tenant_fk("patient_id", "patients", ondelete="CASCADE", name="fk_vital_patient"),
+        tenant_fk("clinic_id", "clinics", ondelete="SET NULL", name="fk_vital_clinic"),
+        tenant_fk("visit_id", "visits", ondelete="SET NULL", name="fk_vital_visit"),
+        Index("ix_vitals_patient_recorded", "health_center_id", "patient_id", "recorded_at"),
+    )
+    id = Column(Integer, primary_key=True)
+    patient_id = Column(Integer, nullable=False, index=True)
+    clinic_id = Column(Integer)
+    visit_id = Column(Integer)
+    recorded_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    bp_systolic = Column(Integer)
+    bp_diastolic = Column(Integer)
+    heart_rate = Column(Integer)
+    temperature = Column(Numeric(4, 1))
+    resp_rate = Column(Integer)
+    spo2 = Column(Integer)
+    weight = Column(Numeric(5, 2))
+    height = Column(Numeric(5, 1))
+    bmi = Column(Numeric(4, 1))
+    notes = Column(Text)
+
+
+REFERRAL_URGENCIES = ("routine", "urgent", "stat")
+REFERRAL_STATUSES = ("pending", "accepted", "completed", "cancelled")
+
+
+class PatientReferral(db.Model, TenantMixin, TimestampMixin, VersionMixin, UndoDeleteMixin, AuthorSnapshotMixin):
+    """Cross-department consult or internal patient referral."""
+    __tablename__ = "patient_referrals"
+    __table_args__ = (
+        tenant_unique("patient_referrals"),
+        CheckConstraint("urgency IN ('routine','urgent','stat')", name="urgency"),
+        CheckConstraint("status IN ('pending','accepted','completed','cancelled')", name="status"),
+        tenant_fk("patient_id", "patients", ondelete="CASCADE", name="fk_ref_patient"),
+        tenant_fk("from_department_id", "health_center_departments", ondelete="CASCADE", name="fk_ref_from_dept"),
+        tenant_fk("from_clinic_id", "clinics", ondelete="CASCADE", name="fk_ref_from_clinic"),
+        tenant_fk("to_department_id", "health_center_departments", ondelete="CASCADE", name="fk_ref_to_dept"),
+        tenant_fk("to_clinic_id", "clinics", ondelete="SET NULL", name="fk_ref_to_clinic"),
+        tenant_fk("visit_id", "visits", ondelete="SET NULL", name="fk_ref_visit"),
+        tenant_fk("completed_visit_id", "visits", ondelete="SET NULL", name="fk_ref_comp_visit"),
+        Index("ix_ref_to_dept_status", "health_center_id", "to_department_id", "status", "referred_at"),
+        Index("ix_ref_patient", "health_center_id", "patient_id", "referred_at"),
+    )
+    id = Column(Integer, primary_key=True)
+    patient_id = Column(Integer, nullable=False, index=True)
+    from_department_id = Column(Integer, nullable=False)
+    from_clinic_id = Column(Integer, nullable=False)
+    to_department_id = Column(Integer, nullable=False)
+    to_clinic_id = Column(Integer)
+    visit_id = Column(Integer)
+    completed_visit_id = Column(Integer)
+    reason = Column(Text, nullable=False)
+    urgency = Column(String(10), nullable=False, default="routine")
+    status = Column(String(20), nullable=False, default="pending")
+    referred_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    accepted_at = Column(DateTime(timezone=True))
+    accepted_by_user_id = Column(Integer)
+    accepted_by_name = Column(String(200))
+    completed_at = Column(DateTime(timezone=True))
+    notes = Column(Text)
+

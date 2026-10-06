@@ -1,7 +1,7 @@
-# AGENTS.md — Health Center Platform Developer Guide
+# AGENTS.md — AeroCare Developer Guide
 
 ## 1. Project Overview & Multi-Tenant Architecture
-This project evolves AeroDent-Online into a full multi-tenant Health Center Management Platform.
+**AeroCare** is a multi-tenant Health Center Management Platform that evolved from AeroDent-Online (AeroDent lives on as its Dentistry department).
 - **Hierarchy**:
   ```text
   Platform (Superadmin Portal)

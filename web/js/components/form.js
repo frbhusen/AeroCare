@@ -3,6 +3,7 @@ import { h, mount } from "../core/dom.js";
 import { t } from "../core/i18n.js";
 import { toastApiError } from "./toast.js";
 import { snippetButton } from "./snippets.js";
+import { dictateButton } from "./dictate.js";
 
 /**
  * Field spec: {name, label, type: "text"|"email"|"tel"|"password"|"number"|"date"|"time"|"datetime"|
@@ -44,10 +45,12 @@ export function field(spec, value) {
   let labelEl = null;
   if (spec.label) {
     const snip = type === "textarea" ? snippetButton(control, spec.name, spec.snippets) : null;
-    labelEl = snip
+    const dict = type === "textarea" && spec.dictate !== false ? dictateButton(control) : null;
+    const tools = (snip || dict) ? h("div", { class: "field-tools row gap-xs" }, snip, dict) : null;
+    labelEl = tools
       ? h("div", { class: "field-label-row" },
         h("label", { for: id }, spec.label, spec.required ? h("span", { class: "req", "aria-hidden": "true" }, "*") : null),
-        snip)
+        tools)
       : h("label", { for: id }, spec.label, spec.required ? h("span", { class: "req", "aria-hidden": "true" }, "*") : null);
   }
   return h("div", { class: ["field", spec.span === 2 && "span-2"], dataset: { field: spec.name } },

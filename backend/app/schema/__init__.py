@@ -24,8 +24,92 @@ TENANT_EXPR = ("(current_setting('app.mode', true) = 'platform' OR "
 SPECIAL_TABLES = {"users", "audit_logs", "health_centers"}
 
 CORE_SQL = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS ix_patients_search_name_trgm ON patients USING gin (search_name gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS ix_patients_phone_trgm ON patients USING gin (phone_digits gin_trgm_ops);
+
+CREATE TABLE IF NOT EXISTS patient_vitals (
+    id serial PRIMARY KEY,
+    health_center_id integer NOT NULL,
+    patient_id integer NOT NULL,
+    clinic_id integer,
+    visit_id integer,
+    recorded_at timestamptz NOT NULL DEFAULT now(),
+    bp_systolic integer,
+    bp_diastolic integer,
+    heart_rate integer,
+    temperature numeric(4,1),
+    resp_rate integer,
+    spo2 integer,
+    weight numeric(5,2),
+    height numeric(5,1),
+    bmi numeric(4,1),
+    notes text,
+    author_user_id integer,
+    author_name varchar(200),
+    author_role varchar(40),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    version integer NOT NULL DEFAULT 1,
+    pending_delete_until timestamptz
+);
+CREATE INDEX IF NOT EXISTS ix_vitals_patient_recorded ON patient_vitals (health_center_id, patient_id, recorded_at);
+
+CREATE TABLE IF NOT EXISTS patient_referrals (
+    id serial PRIMARY KEY,
+    health_center_id integer NOT NULL,
+    patient_id integer NOT NULL,
+    from_department_id integer NOT NULL,
+    from_clinic_id integer NOT NULL,
+    to_department_id integer NOT NULL,
+    to_clinic_id integer,
+    visit_id integer,
+    completed_visit_id integer,
+    reason text NOT NULL,
+    urgency varchar(10) NOT NULL DEFAULT 'routine',
+    status varchar(20) NOT NULL DEFAULT 'pending',
+    referred_at timestamptz NOT NULL DEFAULT now(),
+    accepted_at timestamptz,
+    accepted_by_user_id integer,
+    accepted_by_name varchar(200),
+    completed_at timestamptz,
+    notes text,
+    author_user_id integer,
+    author_name varchar(200),
+    author_role varchar(40),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    version integer NOT NULL DEFAULT 1,
+    pending_delete_until timestamptz
+);
+CREATE INDEX IF NOT EXISTS ix_ref_to_dept_status ON patient_referrals (health_center_id, to_department_id, status, referred_at);
+CREATE INDEX IF NOT EXISTS ix_ref_patient ON patient_referrals (health_center_id, patient_id, referred_at);
+
+CREATE TABLE IF NOT EXISTS billing_packages (
+    id serial PRIMARY KEY,
+    health_center_id integer NOT NULL,
+    patient_id integer NOT NULL,
+    department_id integer NOT NULL,
+    clinic_id integer NOT NULL,
+    invoice_id integer,
+    title varchar(200) NOT NULL,
+    total_price numeric(14,2) NOT NULL DEFAULT 0,
+    total_sessions integer NOT NULL DEFAULT 1,
+    completed_sessions integer NOT NULL DEFAULT 0,
+    status varchar(20) NOT NULL DEFAULT 'active',
+    installments jsonb NOT NULL DEFAULT '[]'::jsonb,
+    notes text,
+    author_user_id integer,
+    author_name varchar(200),
+    author_role varchar(40),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    version integer NOT NULL DEFAULT 1,
+    pending_delete_until timestamptz
+);
+CREATE INDEX IF NOT EXISTS ix_pkg_patient_status ON billing_packages (health_center_id, patient_id, status);
+CREATE INDEX IF NOT EXISTS ix_pkg_dept_status ON billing_packages (health_center_id, department_id, status);
+
 
 CREATE OR REPLACE FUNCTION hc_audit_immutable() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN

@@ -113,7 +113,7 @@ def create_center_with_manager(p, body):
 
 def _create_manager(p, c, m):
     u = accounts.create_user_record(center_id=c.id, username=m["username"], name=m["name"], role="center_manager",
-                                    password=m["password"], email=m.get("email"))
+                                    password=m["password"], email=m.get("email"), must_change_password=True)
     audit.log_change(p, "user", "create", "user", u.id, f"{u.name} ({u.username})", center_id=c.id)
     return u
 

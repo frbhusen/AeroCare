@@ -141,3 +141,63 @@ def reopen_visit(visit_id):
 @login_required
 def delete_visit(visit_id):
     return jsonify(visits.delete(current_principal(), visit_id)), 202
+
+
+# ------------------------------------------------------------------ vitals
+@bp.get("/patients/<int:patient_id>/vitals")
+@login_required
+def list_patient_vitals(patient_id):
+    from . import vitals
+    return jsonify(vitals.list_vitals(current_principal(), patient_id))
+
+
+@bp.post("/patients/<int:patient_id>/vitals")
+@login_required
+def create_patient_vital(patient_id):
+    from . import vitals
+    return jsonify(vitals.create_vital(current_principal(), patient_id, request_json())), 201
+
+
+@bp.delete("/vitals/<int:vital_id>")
+@login_required
+def delete_patient_vital(vital_id):
+    from . import vitals
+    return jsonify(vitals.delete_vital(current_principal(), vital_id)), 202
+
+
+# ------------------------------------------------------------------ referrals
+@bp.get("/patients/<int:patient_id>/referrals")
+@login_required
+def list_patient_referrals(patient_id):
+    from . import referrals
+    return jsonify(referrals.list_referrals(current_principal(), patient_id))
+
+
+@bp.post("/patients/<int:patient_id>/referrals")
+@login_required
+def create_patient_referral(patient_id):
+    from . import referrals
+    return jsonify(referrals.create_referral(current_principal(), patient_id, request_json())), 201
+
+
+@bp.get("/referrals/incoming")
+@login_required
+def incoming_referrals():
+    from . import referrals
+    return jsonify(referrals.incoming_referrals(current_principal(), request.args.to_dict()))
+
+
+@bp.post("/referrals/<int:referral_id>/status")
+@login_required
+def update_referral_status(referral_id):
+    from . import referrals
+    return jsonify(referrals.update_referral_status(current_principal(), referral_id, request_json()))
+
+
+# ------------------------------------------------------------------ visit orders
+@bp.get("/visits/<int:visit_id>/orders")
+@login_required
+def visit_orders(visit_id):
+    from . import orders
+    return jsonify(orders.get_visit_orders(current_principal(), visit_id))
+

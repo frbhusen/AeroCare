@@ -30,6 +30,9 @@ class Config:
     SESSION_COOKIE_SECURE = _bool("SESSION_COOKIE_SECURE", True)
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_MAX_AGE_DAYS = int(os.environ.get("SESSION_MAX_AGE_DAYS", "365"))
+    # Sessions unused for this many days end (0 = never). Normal daily use never hits it (spec §7:
+    # no inactivity logout during work); it only retires forgotten sessions on shared/lost devices.
+    SESSION_IDLE_DAYS = int(os.environ.get("SESSION_IDLE_DAYS", "30"))
 
     STORAGE_ROOT = os.environ.get("STORAGE_ROOT", str(BASE_DIR / "storage"))
     BACKUP_ROOT = os.environ.get("BACKUP_ROOT", str(BASE_DIR / "backups"))

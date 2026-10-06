@@ -1,7 +1,7 @@
 {
-  "name": "Health Center",
-  "short_name": "Health Center",
-  "description": "Health Center Management Platform",
+  "name": "AeroCare",
+  "short_name": "AeroCare",
+  "description": "AeroCare — Health Center Management Platform",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

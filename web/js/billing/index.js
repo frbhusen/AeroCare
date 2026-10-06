@@ -1,12 +1,22 @@
-// Billing module registration
+import { mount } from "../core/index.js";
 import { en, ar } from "./i18n.js";
 import { renderOverview, renderInvoices, renderOutstanding } from "./home.js";
 import { renderInvoice } from "./invoice.js";
 import { renderEditor } from "./editor.js";
 import { renderServices } from "./services.js";
+import { packagesPanel } from "./packages.js";
+import { registerPatientTab } from "../patients/hooks.js";
 
 export function register(registry) {
   registry.i18n({ en, ar });
+
+  registerPatientTab({
+    key: "packages",
+    label: "billing.packages.tab",
+    perm: "billing.view",
+    order: 45,
+    render: (el, { patient, ctx, reload }) => mount(el, packagesPanel({ ctx, patient, onUpdated: reload })),
+  });
 
   // Center area (Financial)
   const centerRoutes = [

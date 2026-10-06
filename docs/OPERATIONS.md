@@ -12,10 +12,10 @@ The full backup is the disaster-recovery mechanism. The center export is a porta
 ## 1. Creating a full backup
 
 ```
-set -a; . /etc/healthcenter/healthcenter.env; set +a
-cd /opt/healthcenter/app
-/opt/healthcenter/venv/bin/flask --app backend.wsgi backup create
-# -> backup written: /var/lib/healthcenter/backups/hc-backup-20261004-031500
+set -a; . /etc/aerocare/aerocare.env; set +a
+cd /opt/aerocare/app
+/opt/aerocare/venv/bin/flask --app backend.wsgi backup create
+# -> backup written: /var/lib/aerocare/backups/hc-backup-20261004-031500
 ```
 
 Each backup is a directory `BACKUP_ROOT/hc-backup-<UTC yyyymmdd-HHMMSS>/`:
@@ -39,38 +39,38 @@ Details:
 
 Assumes the target follows `docs/DEPLOYMENT.md` sections 1-3 (packages, roles, app checkout, venv, env file). **Do not run `init-schema` before the restore.**
 
-1. **Stop the application** (if it is running): `systemctl stop healthcenter`.
+1. **Stop the application** (if it is running): `systemctl stop aerocare`.
 2. **Create roles + empty database** (as `postgres`). Use the same role names as the source:
    ```sql
    CREATE ROLE hc_schema LOGIN PASSWORD '...' NOSUPERUSER NOBYPASSRLS;
    CREATE ROLE hc_app    LOGIN PASSWORD '...' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
-   CREATE DATABASE healthcenter OWNER hc_schema;
-   \c healthcenter
+   CREATE DATABASE aerocare OWNER hc_schema;
+   \c aerocare
    CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS btree_gist;
    ```
 3. **Restore the database** as the schema owner:
    ```
    pg_restore --no-owner --role=hc_schema --exit-on-error \
-       -h 127.0.0.1 -U hc_schema -d healthcenter hc-backup-XXXX/database.dump
+       -h 127.0.0.1 -U hc_schema -d aerocare hc-backup-XXXX/database.dump
    ```
    `--no-owner` makes `hc_schema` own everything, whatever the source owner was. Warnings about existing extensions can be ignored. If the runtime role has a different name on the new server, step 5 grants it.
    If `--exit-on-error` stops on an RLS error while loading data, restore as the `postgres` superuser instead (`-U postgres --no-owner --role=hc_schema`). Superusers bypass RLS during the load.
 4. **Restore the files** into `STORAGE_ROOT`:
    ```
-   install -d -o healthcenter -m 700 /var/lib/healthcenter/storage
-   cd /var/lib/healthcenter/storage && unzip /path/hc-backup-XXXX/files.zip
-   chown -R healthcenter: /var/lib/healthcenter/storage
+   install -d -o aerocare -m 700 /var/lib/aerocare/storage
+   cd /var/lib/aerocare/storage && unzip /path/hc-backup-XXXX/files.zip
+   chown -R aerocare: /var/lib/aerocare/storage
    ```
 5. **Re-apply schema extras and grants** (idempotent, never drops data):
    ```
-   set -a; . /etc/healthcenter/healthcenter.env; set +a
-   cd /opt/healthcenter/app && /opt/healthcenter/venv/bin/flask --app backend.wsgi db init-schema
+   set -a; . /etc/aerocare/aerocare.env; set +a
+   cd /opt/aerocare/app && /opt/aerocare/venv/bin/flask --app backend.wsgi db init-schema
    ```
    This re-creates the RLS policies, the audit immutability trigger and the `GRANT`s for the runtime role named in `DATABASE_URL`.
-6. **Environment**: copy the old `/etc/healthcenter/healthcenter.env` and adjust hosts/passwords. Keep `STORAGE_ROOT`, `BACKUP_ROOT` and `LOG_DIR` paths. A new `SECRET_KEY` only invalidates existing sessions (users log in again).
-7. **Start and verify**: `systemctl start healthcenter`, reload Nginx (`deploy/nginx/healthcenter.conf`). Check `curl https://host/api/v1/health`, log in as a Superadmin, open a center and download a file. Run `flask --app backend.wsgi ops storage-gc --dry-run`: it should report 0 orphaned files. A non-zero count means `files.zip` did not match the dump (it removes nothing in dry-run mode).
+6. **Environment**: copy the old `/etc/aerocare/aerocare.env` and adjust hosts/passwords. Keep `STORAGE_ROOT`, `BACKUP_ROOT` and `LOG_DIR` paths. A new `SECRET_KEY` only invalidates existing sessions (users log in again).
+7. **Start and verify**: `systemctl start aerocare`, reload Nginx (`deploy/nginx/aerocare.conf`). Check `curl https://host/api/v1/health`, log in as a Superadmin, open a center and download a file. Run `flask --app backend.wsgi ops storage-gc --dry-run`: it should report 0 orphaned files. A non-zero count means `files.zip` did not match the dump (it removes nothing in dry-run mode).
 
-Gunicorn/Nginx/systemd configuration: `deploy/gunicorn.conf.py`, `deploy/nginx/healthcenter.conf`, `deploy/systemd/healthcenter.service`, `docs/DEPLOYMENT.md`.
+Gunicorn/Nginx/systemd configuration: `deploy/gunicorn.conf.py`, `deploy/nginx/aerocare.conf`, `deploy/systemd/aerocare.service`, `docs/DEPLOYMENT.md`.
 
 ## 3. Center export (one tenant)
 

@@ -6,7 +6,10 @@ import { conflictOr } from "./util.js";
 import { visitOpener, visitCreator } from "./hooks.js";
 import { loadMeta } from "./meta.js";
 import { prescriptionsPanel } from "./prescriptions.js";
+import { ordersPanel } from "./orders.js";
+import { referralsPanel } from "./referrals.js";
 import { filesPanel } from "../files/panel.js";
+
 
 const visitTypeLabel = (vt) => {
   const k = `patients.visit_type.${vt}`;
@@ -132,11 +135,16 @@ export function openVisitDrawer(ctx, visit, { onChange } = {}) {
           onDone: () => { drawer.close(); onChange?.(); }, onUndone: () => onChange?.() });
       } catch { /* toast shown */ }
     } }, icon("trash"), t("core.delete")) : null;
-    const patient = { id: v.patient_id };
+    const patient = { id: v.patient_id, full_name: v.patient_name };
     mount(body, info, h("div", { class: "row" }, statusBtn, delBtn), form.el,
+      can("medical_records.view") ? h("section", h("h3", t("patients.orders.title")),
+        ordersPanel({ ctx, patient, visit: v, compact: true })) : null,
       can("medical_records.view") ? h("section", h("h3", t("patients.tab.prescriptions")),
         prescriptionsPanel({ ctx, patient, visit: v, compact: true })) : null,
+      can("medical_records.view") ? h("section", h("h3", t("patients.referrals.title")),
+        referralsPanel({ ctx, patient, visit: v, compact: true })) : null,
       can("files.view") ? h("section", h("h3", t("patients.tab.files")), filesPanel({ ctx, patient, visit: v, compact: true })) : null);
+
   }
 
   async function reload() {

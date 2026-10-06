@@ -18,7 +18,7 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 def user_json(u):
     return {"id": u.id, "username": u.username, "name": u.name, "email": u.email, "role": u.role,
             "status": u.status, "clinic_id": u.clinic_id, "department_id": u.department_id,
-            "health_center_id": u.health_center_id}
+            "health_center_id": u.health_center_id, "must_change_password": bool(u.must_change_password)}
 
 
 def center_json(c):
@@ -88,7 +88,11 @@ def change_password():
     data = validate(request_json(), {"current_password": Str(required=True, strip=False, max_len=200),
                                      "new_password": Str(required=True, strip=False, max_len=200)})
     p = current_principal()
-    auth.validate_password(data["new_password"])
+    auth.validate_password(data["new_password"], p.user.username)
+    if data["new_password"] == data["current_password"]:
+        from backend.app.core.errors import ValidationError
+        raise ValidationError("Invalid password", code="weak_password",
+                              details={"password": "must be different from the current password"})
     with tenancy.scoped("auth"):
         user = db.session.get(User, p.user.id)
         if not auth.verify_password(user.password_hash, data["current_password"]):
@@ -96,6 +100,7 @@ def change_password():
         user.password_hash = auth.hash_password(data["new_password"])
         from backend.app.core.timeutil import utcnow
         user.password_changed_at = utcnow()
+        user.must_change_password = False
         db.session.commit()
     return jsonify({"ok": True})
 

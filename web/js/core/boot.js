@@ -4,13 +4,15 @@ import { onEvent } from "./events.js";
 import { registry } from "./registry.js";
 import { startRouter, stopRouter, refresh } from "./router.js";
 import { renderMatch, resetShell } from "./shell.js";
-import { clearSession, isAuthenticated } from "./state.js";
+import { clearSession, isAuthenticated, getUser } from "./state.js";
 import { h, mount } from "./dom.js";
 import { MODULES } from "../modules.js";
 import { registerPortal } from "../portal/index.js";
 import { registerCenter } from "../center/index.js";
 import { registerDepartmentCore } from "./department.js";
-import { fetchMe, applySession } from "../auth/session.js";
+import { fetchMe, applySession, logout } from "../auth/session.js";
+import { api } from "./api.js";
+import { createForm } from "../components/form.js";
 import { renderLogin } from "../auth/login.js";
 import { setOfflineUserId } from "../offline/idb.js";
 import { errorState } from "../components/states.js";
@@ -22,7 +24,40 @@ const AUTH_MESSAGES = {
   center_inactive: "core.error.center_inactive",
   account_inactive: "core.auth.account_inactive",
   session_ended: "core.auth.session_ended",
+  session_expired: "core.auth.session_expired",
 };
+
+/** Administrator-chosen password (new account / reset): the user must choose their own before working. */
+function showForcedPasswordChange() {
+  stopRouter();
+  resetShell();
+  const form = createForm({
+    columns: 1,
+    fields: [
+      { name: "current_password", label: t("core.password.current_temp"), type: "password", required: true, autocomplete: "current-password" },
+      { name: "new_password", label: t("core.password.new"), type: "password", required: true, autocomplete: "new-password",
+        help: t("core.password.rule") },
+      { name: "confirm", label: t("core.password.confirm"), type: "password", required: true, autocomplete: "new-password" },
+    ],
+    submitLabel: t("core.password.change"),
+    onSubmit: async (v, f) => {
+      if (v.new_password !== v.confirm) return f.setErrors({ confirm: t("core.password.mismatch") });
+      try {
+        await api.post("/auth/change-password", { current_password: v.current_password, new_password: v.new_password });
+      } catch (e) {
+        if (e.code === "invalid_credentials") return f.setErrors({ current_password: t("core.password.wrong") });
+        if (e.details?.password) return f.setErrors({ new_password: e.details.password });
+        throw e;
+      }
+      const me = await fetchMe();
+      await applySession(me);
+      startApp();
+    },
+  });
+  mount(appRoot, h("div", { class: "login-screen" }, h("div", { class: "login-card card card-body stack gap-md" },
+    h("h1", t("core.password.must_change_title")), h("p", { class: "muted" }, t("core.password.must_change_help")), form.el,
+    h("button", { class: "btn btn-ghost", type: "button", onClick: () => logout() }, t("core.logout", { default: "Sign out" })))));
+}
 
 async function loadModules() {
   const loaded = [];
@@ -51,6 +86,7 @@ let modulesReady = Promise.resolve();
 
 async function startApp() {
   await modulesReady; // module routes must be registered before the first route resolves
+  if (getUser()?.must_change_password) return showForcedPasswordChange();
   resetShell();
   startRouter((m) => renderMatch(m, appRoot));
 }
@@ -94,6 +130,8 @@ onEvent("auth:lost", ({ code, message } = {}) => {
   const key = AUTH_MESSAGES[code];
   showLogin(wasIn || key ? (key ? t(key) : message || t("core.auth.signed_out")) : undefined);
 });
+
+onEvent("auth:password_change", () => { if (isAuthenticated()) showForcedPasswordChange(); });
 
 onEvent("lang:changed", () => {
   if (isAuthenticated()) {

@@ -48,6 +48,8 @@ class User(db.Model, TimestampMixin, VersionMixin):
     specialty_title = Column(String(150))
     last_login_at = Column(DateTime(timezone=True))
     password_changed_at = Column(DateTime(timezone=True))
+    # Set when an administrator chose the password (new account / reset): the user must pick their own.
+    must_change_password = Column(Boolean, nullable=False, default=False, server_default="false")
 
     @property
     def is_active(self):

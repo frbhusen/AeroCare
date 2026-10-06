@@ -16,7 +16,10 @@ def _basic_center(app, client_for, world, modules=("dentistry", "dermatology", "
                                                "manager": {"username": f"m{tag}", "name": "Mgr", "password": PASSWORD}})
     assert r.status_code == 201, r.get_json()
     info = r.get_json()
-    return client_for(info["manager"]["email"]), info
+    mgr = client_for(info["manager"]["email"])
+    r_pw = mgr.post("/api/v1/auth/change-password", json={"current_password": PASSWORD, "new_password": f"New-{PASSWORD}-1"})
+    assert r_pw.status_code == 200, r_pw.get_json()
+    return mgr, info
 
 
 def test_settings_update_version_and_permissions(world, client_for):

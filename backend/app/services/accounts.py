@@ -52,17 +52,17 @@ def _flush_user(u):
 
 
 def create_user_record(*, center_id, username, name, role, password, email=None, clinic_id=None,
-                       department_id=None, phone=None, specialty_title=None):
+                       department_id=None, phone=None, specialty_title=None, must_change_password=False):
     from backend.app.auth.service import hash_password, validate_password
     check_username(username)
-    validate_password(password)
+    validate_password(password, username)
     name = (name or "").strip()
     if not name or len(name) > 200:
         raise ValidationError("Invalid name", details={"name": "is required (max 200 characters)"})
     u = User(health_center_id=center_id, username=username, name=name, role=role,
              password_hash=hash_password(password), clinic_id=clinic_id, department_id=department_id, phone=phone,
              specialty_title=specialty_title, email=f"pending-{uuid.uuid4().hex}@invalid.local",
-             email_is_generated=email is None)
+             email_is_generated=email is None, must_change_password=must_change_password)
     db.session.add(u)
     _flush_user(u)
     u.email = check_email(email) if email else generated_email(username, u.id)

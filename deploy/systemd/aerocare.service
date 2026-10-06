@@ -1,20 +1,20 @@
 [Unit]
-Description=Health Center Platform (Gunicorn)
+Description=AeroCare - Health Center Management Platform (Gunicorn)
 After=network.target postgresql.service
 
 [Service]
-User=healthcenter
-Group=healthcenter
-WorkingDirectory=/opt/healthcenter/app
-EnvironmentFile=/etc/healthcenter/healthcenter.env
-ExecStart=/opt/healthcenter/venv/bin/gunicorn -c deploy/gunicorn.conf.py backend.wsgi:app
+User=aerocare
+Group=aerocare
+WorkingDirectory=/opt/aerocare/app
+EnvironmentFile=/etc/aerocare/aerocare.env
+ExecStart=/opt/aerocare/venv/bin/gunicorn -c deploy/gunicorn.conf.py backend.wsgi:app
 Restart=on-failure
 RestartSec=5
 # Hardening
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ReadWritePaths=/var/lib/healthcenter /var/log/healthcenter
+ReadWritePaths=/var/lib/aerocare /var/log/aerocare
 UMask=0027
 
 [Install]

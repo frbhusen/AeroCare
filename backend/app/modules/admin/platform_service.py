@@ -174,7 +174,8 @@ def create_superadmin(p, body):
     data = validate(body, {"username": Str(required=True, max_len=50), "name": Str(required=True, max_len=200),
                            "password": Str(required=True, strip=False, max_len=200), "email": Str(max_len=255)})
     u = accounts.create_user_record(center_id=None, username=data["username"], name=data["name"],
-                                    role="superadmin", password=data["password"], email=data.get("email"))
+                                    role="superadmin", password=data["password"], email=data.get("email"),
+                                    must_change_password=True)
     _audit_user(p, u, "create")
     db.session.commit()
     return u
@@ -215,9 +216,10 @@ def reset_password(p, user_id, body):
     from backend.app.core.timeutil import utcnow
     u = get_user(user_id)
     data = validate(body, {"password": Str(required=True, strip=False, max_len=200)})
-    validate_password(data["password"])
+    validate_password(data["password"], u.username)
     u.password_hash = hash_password(data["password"])
     u.password_changed_at = utcnow()
+    u.must_change_password = True  # chosen by an administrator: the owner must set their own
     revoke_user_sessions(u.id, "password_reset")
     _audit_user(p, u, "edit", ["password"])
     db.session.commit()
@@ -295,7 +297,7 @@ BRANDING_KEY = "branding"
 LOGO_KEY = "branding_logo"
 LOGO_MAX_BYTES = 1024 * 1024
 LOGO_MIMES = {"image/png", "image/jpeg", "image/webp"}
-BRANDING_DEFAULTS = {"platform_name": "Health Center Platform", "primary_color": "#0f766e",
+BRANDING_DEFAULTS = {"platform_name": "AeroCare", "primary_color": "#0f766e",
                      "secondary_color": "#0ea5e9", "login_message": None, "support_contact": None}
 
 

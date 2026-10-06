@@ -518,6 +518,40 @@
   width: 12px;
   height: 12px;
 }
+.dictate-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.dictate-trigger-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.dictate-trigger-btn .icon {
+  width: 12px;
+  height: 12px;
+}
+.dictate-trigger-btn.is-listening {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #ef4444;
+  animation: pulse-recording 1.2s infinite ease-in-out;
+}
+@keyframes pulse-recording {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2); }
+}
 .snippet-popover {
   max-width: 380px;
   width: 90vw;
@@ -565,4 +599,366 @@
   color: var(--accent);
   border-color: rgba(13, 148, 136, 0.25);
 }
+
+/* Vitals & Biometrics */
+.vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--sp-3);
+}
+.vitals-tile {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.vitals-tile-header {
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+}
+.vitals-tile-val {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.vitals-tile-val strong {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--ink);
+}
+.vitals-tile-unit {
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+}
+.vitals-sparkline {
+  overflow: visible;
+}
+.vitals-trends-row {
+  margin-bottom: var(--sp-2);
+}
+
+/* 80mm POS Thermal Receipt Preview */
+.receipt-thermal {
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 16px;
+  background: #fff;
+  color: #111;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+}
+.th-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+.th-center-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.th-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+.th-divider {
+  border-top: 1px dashed #777;
+  margin: 8px 0;
+}
+.th-divider-dashed {
+  border-top: 1px dotted #aaa;
+}
+.th-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.th-lbl {
+  color: #444;
+}
+.th-items-head {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+.th-item-line {
+  margin-bottom: 6px;
+}
+.th-item-name {
+  font-weight: 600;
+}
+.th-item-calc {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.th-grand-total {
+  font-size: 14px;
+  font-weight: 700;
+  border-top: 1px solid #222;
+  border-bottom: 1px solid #222;
+  padding: 4px 0;
+  margin: 4px 0;
+}
+.th-paid-now {
+  font-weight: 600;
+}
+.th-balance {
+  font-weight: 700;
+  color: #b91c1c;
+}
+.th-barcode-wrap {
+  text-align: center;
+  margin: 10px 0 6px 0;
+}
+.th-footer {
+  text-align: center;
+  font-size: 10px;
+  color: #555;
+  margin-top: 8px;
+}
+
+/* Printable Patient ID Card (CR80 Standard: 85.6mm x 54mm) */
+.id-card-preview-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+.patient-id-card {
+  width: 340px;
+  height: 215px;
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.patient-id-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--accent, #0d9488), #2563eb);
+}
+.id-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.id-card-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.id-card-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--accent, #0d9488);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.id-card-logo svg {
+  width: 18px;
+  height: 18px;
+}
+.id-card-center-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+}
+.id-card-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--accent, #0d9488);
+}
+.id-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 6px 0 8px 0;
+}
+.id-card-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  font-size: 11px;
+}
+.id-card-field {
+  display: flex;
+  flex-direction: column;
+}
+.id-card-field.span-2 {
+  grid-column: span 2;
+}
+.id-card-lbl {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+.id-card-val {
+  font-weight: 600;
+  color: #1e293b;
+}
+.id-card-val.highlight {
+  color: #b91c1c;
+}
+.id-card-barcode-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+}
+.id-card-code-text {
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: 1px;
+}
+
+/* Orders Panel & Investigation Badges */
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.order-item-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3);
+  background: var(--surface-1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.order-item-main {
+  flex: 1;
+}
+.order-item-title {
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+.order-item-sub {
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+/* Referrals / Consultations Timeline */
+.referrals-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.referral-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3);
+  background: var(--surface-1);
+}
+.referral-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--sp-2);
+}
+.referral-route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+.referral-reason {
+  font-size: var(--fs-sm);
+  margin-top: var(--sp-1);
+}
+.referral-notes {
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+  background: var(--surface-2);
+  padding: var(--sp-2);
+  border-radius: var(--radius-sm);
+  margin-top: var(--sp-2);
+}
+
+/* Packages & Installments */
+.package-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  background: var(--surface-1);
+  margin-bottom: var(--sp-3);
+}
+.pkg-progress-wrap {
+  margin: var(--sp-3) 0;
+}
+.pkg-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.pkg-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.pkg-session-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--sp-2);
+}
+.pkg-session-pill {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+.pkg-session-pill.used {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+
 

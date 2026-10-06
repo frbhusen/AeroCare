@@ -1,6 +1,6 @@
 // Patients list + fast search (name / phone). The API returns {items, has_more} (no COUNT on big tables).
 import { api, h, t, mount, debounce, icon, can, formatDate, ageFrom, navigate, clinicsOf, canClinic,
-  loadingState, emptyState, errorState, offlineCopyBanner } from "../core/index.js";
+  loadingState, emptyState, errorState, offlineCopyBanner, listenBarcode } from "../core/index.js";
 import { patientHref, genderLabel } from "./header.js";
 import { openRegisterPatient } from "./register.js";
 
@@ -74,6 +74,16 @@ export function renderPatientList(ctx) {
   function openNew() {
     openRegisterPatient(ctx, { initialQuery: state.q, onCreated: (p) => navigate(patientHref(ctx, p.id)) });
   }
+
+  const stopBarcode = listenBarcode((code) => {
+    const clean = code.trim();
+    if (!clean) return;
+    search.value = clean;
+    state.q = clean;
+    state.page = 1;
+    load();
+  });
+  if (ctx.onLeave) ctx.onLeave(stopBarcode);
 
   load();
   return h("div", { class: "page" },

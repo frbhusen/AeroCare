@@ -195,3 +195,38 @@ class DocumentTemplate(db.Model, TenantMixin, TimestampMixin, VersionMixin, Undo
     show_logo = Column(Boolean)  # NULL = inherit
     accent_color = Column(String(7))
     extra = Column(JSON, nullable=False, default=dict)
+
+
+PACKAGE_STATUSES = ("active", "completed", "cancelled")
+
+
+class BillingPackage(db.Model, TenantMixin, TimestampMixin, VersionMixin, UndoDeleteMixin, AuthorSnapshotMixin):
+    """Package deal or structured treatment plan (e.g. 6-session laser, orthodontic phase, dental implant plan).
+    Tracks total vs used sessions and installment payment progress."""
+    __tablename__ = "billing_packages"
+    __table_args__ = (
+        tenant_unique("billing_packages"),
+        CheckConstraint("status IN ('active','completed','cancelled')", name="status"),
+        CheckConstraint("total_sessions >= 1", name="total_sessions_pos"),
+        CheckConstraint("completed_sessions >= 0 AND completed_sessions <= total_sessions", name="comp_sessions_range"),
+        CheckConstraint("total_price >= 0", name="price_nonneg"),
+        tenant_fk("patient_id", "patients", ondelete="CASCADE", name="fk_pkg_patient"),
+        tenant_fk("department_id", "health_center_departments", ondelete="CASCADE", name="fk_pkg_dept"),
+        tenant_fk("clinic_id", "clinics", ondelete="CASCADE", name="fk_pkg_clinic"),
+        tenant_fk("invoice_id", "invoices", ondelete="SET NULL", name="fk_pkg_invoice"),
+        Index("ix_pkg_patient_status", "health_center_id", "patient_id", "status"),
+        Index("ix_pkg_dept_status", "health_center_id", "department_id", "status"),
+    )
+    id = Column(Integer, primary_key=True)
+    patient_id = Column(Integer, nullable=False, index=True)
+    department_id = Column(Integer, nullable=False)
+    clinic_id = Column(Integer, nullable=False)
+    invoice_id = Column(Integer)  # optional invoice linked for payment tracking
+    title = Column(String(200), nullable=False)
+    total_price = Column(MONEY, nullable=False, default=0)
+    total_sessions = Column(Integer, nullable=False, default=1)
+    completed_sessions = Column(Integer, nullable=False, default=0)
+    status = Column(String(20), nullable=False, default="active")
+    installments = Column(JSON, nullable=False, default=list)  # list of { "due_date": "...", "amount": "...", "label": "...", "paid": bool }
+    notes = Column(Text)
+

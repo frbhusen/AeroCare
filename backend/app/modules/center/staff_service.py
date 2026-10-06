@@ -287,7 +287,7 @@ def create_staff(p, body):
     u = accounts.create_user_record(center_id=p.center_id, username=data["username"], name=data["name"], role=role,
                                     password=data["password"], email=data.get("email"), clinic_id=clinic_id,
                                     department_id=dept.id if dept else None, phone=data.get("phone"),
-                                    specialty_title=data.get("specialty_title"))
+                                    specialty_title=data.get("specialty_title"), must_change_password=True)
     for d_id, c_id in scopes:
         db.session.add(UserScope(health_center_id=p.center_id, user_id=u.id, department_id=d_id, clinic_id=c_id))
     if dept is not None and dept.head_user_id is None:
@@ -412,9 +412,10 @@ def reset_password(p, user_id, body):
     if u.id == p.user.id or u.role not in STAFF_ROLES:
         raise Forbidden("This password must be changed from the account itself or by the platform administrator.")
     data = validate(body, {"password": Str(required=True, strip=False, max_len=200)})
-    validate_password(data["password"])
+    validate_password(data["password"], u.username)
     u.password_hash = hash_password(data["password"])
     u.password_changed_at = utcnow()
+    u.must_change_password = True  # chosen by the manager: the staff member must set their own
     revoke_sessions(u.id, "password_reset")
     _audit(p, u, "edit", ["password"])
     db.session.commit()

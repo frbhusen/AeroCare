@@ -27,3 +27,6 @@
 2026-10-03 — Parallel development by module agents with strict directory ownership (AGENT_GUIDE.md); each agent uses its own test database.
 
 2026-10-03 — Duplicate prevention: `GET /patients/lookup?q=` (requires `patients.create`) searches the whole center but returns only minimal identity (code, name, DOB, gender, masked phone); staff then link the existing patient to their clinic instead of creating a second profile. Clinical details stay scope-restricted.
+
+2026-10-06 — Product renamed to **AeroCare** (Arabic: أيروكير). "Health center" stays the name of the tenant entity (a customer's center); AeroDent remains the heritage name of the Dentistry department. Deploy identifiers (service, paths, prod DB) renamed to `aerocare`; dev/test DB names, `hc_*` DB roles, the `hc_session` cookie and the `hc.lang` storage key are internal and unchanged. Generated login emails keep the spec's `@aerodent.com` domain until decided otherwise.
+

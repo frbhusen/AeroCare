@@ -15,6 +15,44 @@
 
   body.printing-element > *:not(#print-root) { display: none !important; }
   body.printing-element #print-root { display: block !important; }
+
+  /* 80mm POS Thermal Receipt Print rules */
+  body.printing-thermal {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  body.printing-thermal @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+  body.printing-thermal #print-root {
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 8.5pt !important;
+    line-height: 1.25 !important;
+    color: #000 !important;
+  }
+
+  /* CR80 Standard Patient ID Card Print rules (85.6mm x 54mm) */
+  body.printing-card {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.printing-card @page {
+    size: 86mm 54mm;
+    margin: 0;
+  }
+  body.printing-card #print-root {
+    width: 85.6mm !important;
+    height: 53.98mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
 }
 .print-only { display: none; }
 #print-root { display: none; }
+

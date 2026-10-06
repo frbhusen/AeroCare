@@ -1,8 +1,8 @@
-// Global Omni-Search / Command Palette (Ctrl+K or /)
-// Instant search for patients, departments, and fast clinical actions.
 import { api, h, t, mount, formatDate, navigate, href, getPrincipal, getCenter, getDepartments } from "../core/index.js";
 import { icon } from "./icons.js";
 import { openModal } from "./modal.js";
+import { listenBarcode } from "./barcode.js";
+import { toast } from "./toast.js";
 
 let activeModal = null;
 
@@ -20,7 +20,24 @@ export function initOmniSearchHotkeys() {
       openOmniSearch();
     }
   });
+
+  // Fast USB / QR / Barcode scanner listener
+  listenBarcode(async (code) => {
+    const clean = code.trim();
+    if (!clean) return;
+    if (/^PAT-?\d+/i.test(clean) || (clean.length >= 6 && /^\d+$/.test(clean))) {
+      try {
+        const res = await api.get("/patients", { query: { q: clean, per_page: 5 } });
+        if (res.items?.length) {
+          const pat = res.items[0];
+          toast(`${pat.full_name} (${pat.display_code})`, { type: "info" });
+          navigate(`#/patients/${pat.id}`);
+        }
+      } catch {}
+    }
+  });
 }
+
 
 export function openOmniSearch() {
   if (activeModal) return;

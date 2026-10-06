@@ -16,6 +16,7 @@ def _need_principal():
             "session_replaced": "You were signed out because your account signed in on another device.",
             "center_inactive": "This health center's subscription is not active.",
             "account_inactive": "This account is archived.",
+            "session_expired": "You were signed out because this device was not used for a long time.",
         }.get(code, "Authentication required")
         raise Unauthorized(msg, code=code)
     return p

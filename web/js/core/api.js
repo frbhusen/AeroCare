@@ -147,6 +147,7 @@ export async function request(method, url, opts = {}) {
   const data = await parseBody(res);
   if (!res.ok) {
     const e = toApiError(res.status, data);
+    if (res.status === 403 && e.code === "password_change_required") emit("auth:password_change");
     if (res.status === 403 && e.code === "csrf_token" && !opts._csrfRetried && (await refreshCsrf())) {
       return request(method, url, { ...opts, opId: opId || undefined, _csrfRetried: true });
     }

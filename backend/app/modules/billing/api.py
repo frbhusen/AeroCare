@@ -383,3 +383,33 @@ def delete_template(tid):
     t = templates.get(p, tid)
     templates.require_level(p, t.department_id, "settings.edit")
     return jsonify(deletion.stage(p, t, "document_template", f"{t.kind} template")), 202
+
+
+# ------------------------------------------------------------------ packages & installments
+@bp.get("/packages")
+@login_required(perm="billing.view")
+def list_billing_packages():
+    from . import packages
+    return jsonify(packages.list_packages(current_principal(), request.args.to_dict()))
+
+
+@bp.post("/packages")
+@login_required(perm="billing.create")
+def create_billing_package():
+    from . import packages
+    return jsonify(packages.create_package(current_principal(), request_json())), 201
+
+
+@bp.post("/packages/<int:package_id>/session")
+@login_required(perm="billing.edit")
+def record_package_session(package_id):
+    from . import packages
+    return jsonify(packages.record_session(current_principal(), package_id, request_json()))
+
+
+@bp.patch("/packages/<int:package_id>")
+@login_required(perm="billing.edit")
+def update_billing_package(package_id):
+    from . import packages
+    return jsonify(packages.update_package(current_principal(), package_id, request_json()))
+

@@ -1,5 +1,7 @@
 # Agent Guide — read first
 
+Product name: **AeroCare** (multi-tenant Health Center Management Platform). "Health center" = the tenant entity.
+
 Read only what your task needs: this file, then ARCHITECTURE.md / PERMISSIONS.md / DATABASE.md sections relevant to you, then your module doc in `docs/modules/`. The full product spec is `docs/SPEC.md` (search it; don't load it whole unless needed).
 
 ## Environment (Windows dev box)

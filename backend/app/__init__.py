@@ -26,6 +26,11 @@ def _configure_logging(app):
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
+# While an administrator-chosen password is active, only these endpoints work (spec §7 resets).
+PASSWORD_CHANGE_ALLOWED = {"/api/v1/auth/me", "/api/v1/auth/change-password", "/api/v1/auth/logout",
+                           "/api/v1/notifications", "/api/v1/platform/branding"}
+
+
 def create_app(config_name=None, **overrides):
     from .config import get_config
     from .extensions import db
@@ -58,6 +63,11 @@ def create_app(config_name=None, **overrides):
         if request.path.startswith("/api/"):
             load_request_principal()
             csrf_check()
+            p = g.principal
+            if p is not None and getattr(p.user, "must_change_password", False) and request.path not in PASSWORD_CHANGE_ALLOWED:
+                from .core.errors import error_body
+                return error_body("password_change_required",
+                                  "Please choose a new password before continuing.", status=403)
             return idempotency_before()
 
     @app.after_request

@@ -4,6 +4,6 @@ from .platform import Plan, DepartmentType, HealthCenter, HealthCenterModule, Pl
 from .users import User, UserScope, UserSession, LoginAttempt, RolePermission, UserPermission, ROLES  # noqa
 from .org import Department, Clinic  # noqa
 from .clinical import (Patient, PatientDepartmentLink, PatientClinicLink, Visit, Prescription,  # noqa
-                       PrescriptionItem)
+                       PrescriptionItem, PatientVital, PatientReferral)
 from .files import StoredFile, FileShare  # noqa
 from .ops import AuditLog, Notification, SyncOperation, DeletionStage  # noqa

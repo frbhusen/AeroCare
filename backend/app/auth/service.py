@@ -15,7 +15,7 @@ from backend.app.extensions import db
 from backend.app.models import HealthCenter, LoginAttempt, User, UserSession
 
 PASSWORD_METHOD = "scrypt"
-MIN_PASSWORD_LEN = 8
+MIN_PASSWORD_LEN = 10
 
 
 def hash_password(raw: str) -> str:
@@ -31,10 +31,19 @@ def verify_password(hashed: str, raw: str) -> bool:
     return check_password_hash(hashed, raw)
 
 
-def validate_password(raw):
+def validate_password(raw, username=None):
+    """Policy: 10-200 characters, at least one letter and one digit, must not contain the username."""
     from backend.app.core.errors import ValidationError
+    import re
+
+    def bad(msg):
+        raise ValidationError("Invalid password", code="weak_password", details={"password": msg})
     if not isinstance(raw, str) or len(raw) < MIN_PASSWORD_LEN or len(raw) > 200:
-        raise ValidationError("Invalid password", details={"password": f"must be {MIN_PASSWORD_LEN}-200 characters"})
+        bad(f"must be {MIN_PASSWORD_LEN}-200 characters")
+    if not re.search(r"[^\W\d_]", raw) or not re.search(r"\d", raw):
+        bad("must contain at least one letter and one digit")
+    if username and len(username) >= 3 and username.lower() in raw.lower():
+        bad("must not contain the username")
     return raw
 
 
@@ -166,6 +175,13 @@ def load_request_principal(token=None):
         tenancy.clear()
         return
     now = utcnow()
+    idle_days = current_app.config.get("SESSION_IDLE_DAYS") or 0
+    if idle_days and (now - sess.last_seen_at).total_seconds() > idle_days * 86400:
+        sess.revoked_at, sess.revoked_reason = now, "idle_timeout"
+        db.session.commit()
+        g.auth_error = "session_expired"
+        tenancy.clear()
+        return
     if (now - sess.last_seen_at).total_seconds() > 300:
         sess.last_seen_at = now  # coarse touch, no inactivity logout
     center_id = sess.acting_center_id if user.role == "superadmin" else user.health_center_id

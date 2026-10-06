@@ -2,6 +2,7 @@
 import { api, h, t, mount, navigate, toast, toastApiError, openModal, confirmDialog, createForm, deleteWithUndo,
   printPdf, formatDateTime, formatMoney, getLang, can, icon, getDepartment } from "../core/index.js";
 import { link, invoiceStatus, totalsStrip, money, clinicName } from "./util.js";
+import { printThermalReceipt } from "./thermal.js";
 
 export async function renderInvoice(ctx) {
   const id = Number(ctx.params.id);
@@ -25,6 +26,7 @@ export async function renderInvoice(ctx) {
     if (live && Number(inv.balance) > 0 && can("billing.create")) actions.push(btn(t("billing.detail.add_payment"), "wallet", () => pay(inv), inv.status === "draft" ? null : "primary"));
     actions.push(btn(t("billing.detail.print_invoice"), "printer", () => printPdf(`/billing/invoices/${inv.id}/pdf`, { lang: getLang() })));
     if (inv.payments.some((p) => !p.is_void)) actions.push(btn(t("billing.detail.print_receipt"), "printer", () => printPdf(`/billing/invoices/${inv.id}/receipt`, { lang: getLang() })));
+    actions.push(btn(t("billing.detail.print_thermal"), "printer", () => printThermalReceipt(inv)));
     if (live && Number(inv.paid_total) === 0 && can("billing.edit")) actions.push(btn(t("billing.detail.void"), "x", voidInvoice, "ghost"));
     if (can("billing.delete")) actions.push(btn(t("billing.detail.delete"), "trash", remove, "ghost"));
 
@@ -100,6 +102,8 @@ export async function renderInvoice(ctx) {
           h("td", { class: "actions" }, p.is_void ? null : h("div", { class: "btn-group" },
             h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("billing.detail.print_receipt"), "aria-label": t("billing.detail.print_receipt"),
               onClick: () => printPdf(`/billing/invoices/${inv.id}/receipt`, { payment_id: p.id, lang: getLang() }) }, icon("printer")),
+            h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("billing.detail.print_thermal"), "aria-label": t("billing.detail.print_thermal"),
+              onClick: () => printThermalReceipt(inv, p) }, icon("printer"), h("span", { class: "text-xs" }, "80mm")),
             can("billing.edit") ? h("button", { class: "btn btn-sm btn-ghost", type: "button", title: t("billing.detail.void_payment"), "aria-label": t("billing.detail.void_payment"),
               onClick: () => voidPayment(p) }, icon("x")) : null)))))))
         : h("div", { class: "card-body text-muted" }, t("billing.detail.no_payments")));
@@ -139,8 +143,8 @@ export async function renderInvoice(ctx) {
         if (Number(v.amount) > Number(inv.balance)) return form.setErrors({ amount: t("billing.detail.overpay", { amount: formatMoney(inv.balance) }) });
         const res = await api.post(`/billing/invoices/${inv.id}/payments`, { amount: v.amount, method: "cash", notes: v.notes });
         modal.close();
-        toast(t("billing.detail.payment_ok"), { type: "success", action: { label: t("billing.detail.print_receipt"),
-          onClick: () => printPdf(`/billing/invoices/${inv.id}/receipt`, { payment_id: res.payment.id, lang: getLang() }) } });
+        toast(t("billing.detail.payment_ok"), { type: "success", action: { label: t("billing.detail.print_thermal"),
+          onClick: () => printThermalReceipt(inv, res.payment) } });
         await load();
       },
     });

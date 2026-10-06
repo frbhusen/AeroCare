@@ -1,4 +1,4 @@
-# Task Status
+# Task Status — AeroCare
 
 Module-level detail lives in `docs/modules/<m>.md`; this file is the integrated summary (lead updates).
 

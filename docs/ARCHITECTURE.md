@@ -1,6 +1,6 @@
 # Architecture
 
-Multi-tenant Health Center Management Platform. One URL, one app; portal chosen after login by role.
+**AeroCare** — multi-tenant Health Center Management Platform. One URL, one app; portal chosen after login by role.
 
 ```
 Platform (Superadmin)
